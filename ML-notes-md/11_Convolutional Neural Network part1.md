@@ -1,248 +1,246 @@
 # Convolutional Neural network(part 1)
 
-> CNN常常被用在影像处理上，它的theory base就是三个property，和两个架构
-> convolution 架构：针对property 1和property 2
-> max pooling架构：针对property 3
+> CNN 常常被用在影像處理上，它的 theory base 就是三個 property，和兩個架構
+> convolution 架構：針對 property 1 和 property 2
+> max pooling 架構：針對 property 3
 
 #### Why CNN for Image？
 
 ##### CNN V.s. DNN
 
-我们当然可以用一般的neural network来做影像处理，不一定要用CNN，比如说，你想要做图像的分类，那你就去train一个neural network，它的input是一张图片，你就用里面的pixel来表示这张图片，也就是一个很长很长的vector，而output则是由图像类别组成的vector，假设你有1000个类别，那output就有1000个dimension
+我們當然可以用一般的 neural network 來做影像處理，不一定要用 CNN，比如說，你想要做圖像的分類，那你就去 train 一個 neural network，它的 input 是一張圖片，你就用裡面的 pixel 來表示這張圖片，也就是一個很長很長的 vector，而 output 則是由圖像類別組成的 vector，假設你有 1000 個類別，那 output 就有 1000 個 dimension
 
-但是，我们现在会遇到的问题是这样子：实际上，在train neural network的时候，我们会有一种期待说，在这个network structure里面的每一个neuron，都应该代表了一个最基本的classifier；事实上，在文献上，根据训练的结果，也有很多人得到这样的结论，举例来说，下图中：
+但是，我們現在會遇到的問題是這樣子：實際上，在 train neural network 的時候，我們會有一種期待說，在這個 network structure 裡面的每一個 neuron，都應該代表了一個最基本的 classifier；事實上，在文獻上，根據訓練的結果，也有很多人得到這樣的結論，舉例來說，下圖中：
 
-- 第一个layer的neuron，它就是最简单的classifier，它做的事情就是detect有没有绿色出现、有没有黄色出现、有没有斜的条纹出现等等
-- 那第二个layer，它做的事情是detect更复杂的东西，根据第一个layer的output，它如果看到直线横线，就是窗框的一部分；如果看到棕色的直条纹就是木纹；看到斜条纹加灰色的，这个有可能是很多东西，比如说，轮胎的一部分等等
-- 再根据第二个hidden layer的output，第三个hidden layer会做更复杂的事情，比如它可以知道说，当某一个neuron看到蜂巢，它就会被activate；当某一个neuron看到车子，它就会被activate；当某一个neuron看到人的上半身，它就会被activate等等
+- 第一個 layer 的 neuron，它就是最簡單的 classifier，它做的事情就是 detect 有沒有綠色出現、有沒有黃色出現、有沒有斜的條紋出現等等
+- 那第二個 layer，它做的事情是 detect 更複雜的東西，根據第一個 layer 的 output，它如果看到直線橫線，就是窗框的一部分；如果看到棕色的直條紋就是木紋；看到斜條紋加灰色的，這個有可能是很多東西，比如說，輪胎的一部分等等
+- 再根據第二個 hidden layer 的 output，第三個 hidden layer 會做更複雜的事情，比如它可以知道說，當某一個 neuron 看到蜂巢，它就會被 activate；當某一個 neuron 看到車子，它就會被 activate；當某一個 neuron 看到人的上半身，它就會被 activate 等等
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/neuron-classifier.png" width="60%;"></center>
-那现在的问题是这样子：**当我们直接用一般的fully connected的feedforward network来做图像处理的时候，往往会需要太多的参数**
+那現在的問題是這樣子：**當我們直接用一般的fully connected的feedforward network來做圖像處理的時候，往往會需要太多的參數**
 
-举例来说，假设这是一张100\*100的彩色图片，它的分辨率才100\*100，那这已经是很小张的image了，然后你需要把它拉成一个vector，总共有100\*100\*3个pixel(如果是彩色的图的话，每个pixel其实需要3个value，即RGB值来描述它的)，把这些加起来input vectot就已经有三万维了；如果input vector是三万维，又假设hidden layer有1000个neuron，那仅仅是第一层hidden layer的参数就已经有30000\*1000个了，这样就太多了
+舉例來說，假設這是一張 100\*100 的彩色圖片，它的分辨率才 100\*100，那這已經是很小張的 image 了，然後你需要把它拉成一個 vector，總共有 100\*100\*3 個 pixel(如果是彩色的圖的話，每個 pixel 其實需要 3 個 value，即 RGB 值來描述它的)，把這些加起來 input vectot 就已經有三萬維了；如果 input vector 是三萬維，又假設 hidden layer 有 1000 個 neuron，那僅僅是第一層 hidden layer 的參數就已經有 30000\*1000 個了，這樣就太多了
 
-所以，**CNN做的事情其实是，来简化这个neural network的架构，我们根据自己的知识和对图像处理的理解，一开始就把某些实际上用不到的参数给过滤掉**，我们一开始就想一些办法，不要用fully connected network，而是用比较少的参数，来做图像处理这件事情，所以CNN其实是比一般的DNN还要更简单的
+所以，**CNN 做的事情其實是，來簡化這個 neural network 的架構，我們根據自己的知識和對圖像處理的理解，一開始就把某些實際上用不到的參數給過濾掉**，我們一開始就想一些辦法，不要用 fully connected network，而是用比較少的參數，來做圖像處理這件事情，所以 CNN 其實是比一般的 DNN 還要更簡單的
 
-虽然CNN看起来，它的运作比较复杂，但事实上，它的模型比DNN还要更简单，我们就是用prior knowledge，去把原来fully connected的layer里面的一些参数拿掉，就变成CNN
+雖然 CNN 看起來，它的運作比較複雜，但事實上，它的模型比 DNN 還要更簡單，我們就是用 prior knowledge，去把原來 fully connected 的 layer 裡面的一些參數拿掉，就變成 CNN
 
 ##### Three Property for CNN theory base
 
-为什么我们有可能把一些参数拿掉？为什么我们有可能只用比较少的参数就可以来做图像处理这件事情？下面列出三个对影像处理的观察：(**这也是CNN架构提出的基础所在！！！**)
+為什麼我們有可能把一些參數拿掉？為什麼我們有可能只用比較少的參數就可以來做圖像處理這件事情？下面列出三個對影像處理的觀察：(**這也是 CNN 架構提出的基礎所在！！！**)
 
 ###### Some patterns are much smaller than the whole image
 
-在影像处理里面，如果在network的第一层hidden layer里，那些neuron要做的事情是侦测有没有一种东西、一种pattern(图案样式)出现，那大部分的pattern其实是比整张image要小的，所以对一个neuron来说，想要侦测有没有某一个pattern出现，它其实并不需要看整张image，只需要看这张image的一小部分，就可以决定这件事情了
+在影像處理裡面，如果在 network 的第一層 hidden layer 里，那些 neuron 要做的事情是偵測有沒有一種東西、一種 pattern(圖案樣式)出現，那大部分的 pattern 其實是比整張 image 要小的，所以對一個 neuron 來說，想要偵測有沒有某一個 pattern 出現，它其實並不需要看整張 image，只需要看這張 image 的一小部分，就可以決定這件事情了
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/pattern.png" width="60%;"></center>
-举例来说，假设现在我们有一张鸟的图片，那第一层hidden layer的某一个neuron的工作是，检测有没有鸟嘴的存在(你可能还有一些neuron侦测有没有鸟嘴的存在、有一些neuron侦测有没有爪子的存在、有一些neuron侦测有没有翅膀的存在、有没有尾巴的存在，之后合起来，就可以侦测，图片中有没有一只鸟)，那它其实并不需要看整张图，因为，其实我们只要给neuron看这个小的红色杠杠里面的区域，它其实就可以知道说，这是不是一个鸟嘴，对人来说也是一样，只要看这个小的区域你就会知道说这是鸟嘴，所以，**每一个neuron其实只要连接到一个小块的区域就好，它不需要连接到整张完整的图，因此也对应着更少的参数**
+舉例來說，假設現在我們有一張鳥的圖片，那第一層hidden layer的某一個neuron的工作是，檢測有沒有鳥嘴的存在(你可能還有一些neuron偵測有沒有鳥嘴的存在、有一些neuron偵測有沒有爪子的存在、有一些neuron偵測有沒有翅膀的存在、有沒有尾巴的存在，之後合起來，就可以偵測，圖片中有沒有一隻鳥)，那它其實並不需要看整張圖，因為，其實我們只要給neuron看這個小的紅色槓槓裡面的區域，它其實就可以知道說，這是不是一個鳥嘴，對人來說也是一樣，只要看這個小的區域你就會知道說這是鳥嘴，所以，**每一個neuron其實只要連接到一個小塊的區域就好，它不需要連接到整張完整的圖，因此也對應著更少的參數**
 
 ###### The same patterns appear in different regions
 
-同样的pattern，可能会出现在image的不同部分，但是它们有同样的形状、代表的是同样的含义，因此它们也可以用同样的neuron、同样的参数，被同一个detector检测出来
+同樣的 pattern，可能會出現在 image 的不同部分，但是它們有同樣的形狀、代表的是同樣的含義，因此它們也可以用同樣的 neuron、同樣的參數，被同一個 detector 檢測出來
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/pattern-region.png" width="60%;"></center>
-举例来说，上图中分别有一个处于左上角的鸟嘴和一个处于中央的鸟嘴，但你并不需要训练两个不同的detector去专门侦测左上角有没有鸟嘴和中央有没有鸟嘴这两件事情，这样做太冗余了，我们要cost down(降低成本)，我们并不需要有两个neuron、两组不同的参数来做duplicate(重复一样)的事情，所以**我们可以要求这些功能几乎一致的neuron共用一组参数，它们share同一组参数就可以帮助减少总参数的量**
+舉例來說，上圖中分別有一個處於左上角的鳥嘴和一個處於中央的鳥嘴，但你並不需要訓練兩個不同的detector去專門偵測左上角有沒有鳥嘴和中央有沒有鳥嘴這兩件事情，這樣做太冗余了，我們要cost down(降低成本)，我們並不需要有兩個neuron、兩組不同的參數來做duplicate(重復一樣)的事情，所以**我們可以要求這些功能幾乎一致的neuron共用一組參數，它們share同一組參數就可以幫助減少總參數的量**
 
 ###### Subsampling the pixels will not change the object
 
-我们可以对一张image做subsampling(二次抽样)，假如你把它奇数行、偶数列的pixel拿掉，image就可以变成原来的十分之一大小，而且并不会影响人对这张image的理解，对你来说，下面两张大小不一的image看起来不会有什么太大的区别，你都可以识别里面有什么物件，因此subsampling对图像辨识来说，可能是没有太大的影响的
+我們可以對一張 image 做 subsampling(二次抽樣)，假如你把它奇數行、偶數列的 pixel 拿掉，image 就可以變成原來的十分之一大小，而且並不會影響人對這張 image 的理解，對你來說，下面兩張大小不一的 image 看起來不會有什麼太大的區別，你都可以識別裡面有什麼物件，因此 subsampling 對圖像辨識來說，可能是沒有太大的影響的
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/subsamp.png" width="60%;"></center>
-所以，**我们可以利用subsampling这个概念把image变小，从而减少需要用到的参数量**
+所以，**我們可以利用subsampling這個概念把image變小，從而減少需要用到的參數量**
 
 #### The whole CNN structure
 
-整个CNN的架构是这样的：
+整個 CNN 的架構是這樣的：
 
-首先，input一张image以后，它会先通过Convolution的layer，接下来做Max Pooling这件事，然后再去做Convolution，再做Maxi Pooling...，这个process可以反复进行多次(重复次数需要事先决定)，这就是network的架构，就好像network有几层一样，你要做几次convolution，做几次Max Pooling，在定这个network的架构时就要事先决定好
+首先，input 一張 image 以後，它會先通過 Convolution 的 layer，接下來做 Max Pooling 這件事，然後再去做 Convolution，再做 Maxi Pooling...，這個 process 可以反復進行多次(重復次數需要事先決定)，這就是 network 的架構，就好像 network 有幾層一樣，你要做幾次 convolution，做幾次 Max Pooling，在定這個 network 的架構時就要事先決定好
 
-当你做完先前决定的convolution和max pooling的次数后，你要做的事情是Flatten，做完flatten以后，你就把Flatten output丢到一般的Fully connected network里面去，最终得到影像辨识的结果
+當你做完先前決定的 convolution 和 max pooling 的次數後，你要做的事情是 Flatten，做完 flatten 以後，你就把 Flatten output 丟到一般的 Fully connected network 裡面去，最終得到影像辨識的結果
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/whole-cnn.png" width="60%;"></center>
-我们基于之前提到的三个对影像处理的观察，设计了CNN这样的架构，第一个是要侦测一个pattern，你不需要看整张image，只要看image的一个小部分；第二个是同样的pattern会出现在一张图片的不同区域；第三个是我们可以对整张image做subsampling
+我們基於之前提到的三個對影像處理的觀察，設計了CNN這樣的架構，第一個是要偵測一個pattern，你不需要看整張image，只要看image的一個小部分；第二個是同樣的pattern會出現在一張圖片的不同區域；第三個是我們可以對整張image做subsampling
 
-那**前面这两个property，是用convolution的layer来处理的；最后这个property，是用max pooling来处理的**
+那**前面這兩個 property，是用 convolution 的 layer 來處理的；最後這個 property，是用 max pooling 來處理的**
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/property.png" width="60%;"></center>
 #### Convolution
 
-假设现在我们network的input是一张6\*6的image，图像是黑白的，因此每个pixel只需要用一个value来表示，而在convolution layer里面，有一堆Filter，这边的每一个Filter，其实就等同于是Fully connected layer里的一个neuron
+假設現在我們 network 的 input 是一張 6\*6 的 image，圖像是黑白的，因此每個 pixel 只需要用一個 value 來表示，而在 convolution layer 裡面，有一堆 Filter，這邊的每一個 Filter，其實就等同於是 Fully connected layer 里的一個 neuron
 
 ##### Property 1
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/filter.png" width="60%;"></center>
-每一个Filter其实就是一个matrix，这个matrix里面每一个element的值，就跟那些neuron的weight和bias一样，是network的parameter，它们具体的值都是通过Training data学出来的，而不是人去设计的
+每一個Filter其實就是一個matrix，這個matrix裡面每一個element的值，就跟那些neuron的weight和bias一樣，是network的parameter，它們具體的值都是通過Training data學出來的，而不是人去設計的
 
-所以，每个Filter里面的值是什么，要做什么事情，都是自动学习出来的，上图中每一个filter是3\*3的size，意味着它就是在侦测一个3\*3的pattern，**当它侦测的时候，并不会去看整张image，它只看一个3\*3范围内的pixel，就可以判断某一个pattern有没有出现，这就考虑了property 1**
+所以，每個 Filter 裡面的值是什麼，要做什麼事情，都是自動學習出來的，上圖中每一個 filter 是 3\*3 的 size，意味著它就是在偵測一個 3\*3 的 pattern，**當它偵測的時候，並不會去看整張 image，它只看一個 3\*3 範圍內的 pixel，就可以判斷某一個 pattern 有沒有出現，這就考慮了 property 1**
 
 ##### Property 2
 
-这个filter是从image的左上角开始，做一个slide window，每次向右挪动一定的距离，这个距离就叫做stride，由你自己设定，每次filter停下的时候就跟image中对应的3\*3的matrix做一个内积(相同位置的值相乘并累计求和)，这里假设stride=1，那么我们的filter每次移动一格，当它碰到image最右边的时候，就从下一行的最左边开始重复进行上述操作，经过一整个convolution的process，最终得到下图所示的红色的4\*4 matrix
+這個 filter 是從 image 的左上角開始，做一個 slide window，每次向右挪動一定的距離，這個距離就叫做 stride，由你自己設定，每次 filter 停下的時候就跟 image 中對應的 3\*3 的 matrix 做一個內積(相同位置的值相乘並累計求和)，這裡假設 stride=1，那麼我們的 filter 每次移動一格，當它碰到 image 最右邊的時候，就從下一行的最左邊開始重復進行上述操作，經過一整個 convolution 的 process，最終得到下圖所示的紅色的 4\*4 matrix
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/filter1.png" width="60%;"></center>
-观察上图中的Filter1，它斜对角的地方是1,1,1，所以它的工作就是detect有没有连续的从左上角到右下角的1,1,1出现在这个image里面，检测到的结果已在上图中用蓝线标识出来，此时filter得到的卷积结果的左上和左下得到了最大的值，这就代表说，该filter所要侦测的pattern出现在image的左上角和左下角
+觀察上圖中的Filter1，它斜對角的地方是1,1,1，所以它的工作就是detect有沒有連續的從左上角到右下角的1,1,1出現在這個image裡面，檢測到的結果已在上圖中用藍線標識出來，此時filter得到的卷積結果的左上和左下得到了最大的值，這就代表說，該filter所要偵測的pattern出現在image的左上角和左下角
 
-**同一个pattern出现在image左上角的位置和左下角的位置，并不需要用到不同的filter，我们用filter1就可以侦测出来，这就考虑了property 2**
+**同一個 pattern 出現在 image 左上角的位置和左下角的位置，並不需要用到不同的 filter，我們用 filter1 就可以偵測出來，這就考慮了 property 2**
 
 ##### Feature Map
 
-在一个convolution的layer里面，它会有一打filter，不一样的filter会有不一样的参数，但是这些filter做卷积的过程都是一模一样的，你把filter2跟image做完convolution以后，你就会得到另外一个蓝色的4\*4 matrix，那这个蓝色的4\*4 matrix跟之前红色的4\*4matrix合起来，就叫做**Feature Map(特征映射)**，有多少个filter，对应就有多少个映射后的image
+在一個 convolution 的 layer 裡面，它會有一打 filter，不一樣的 filter 會有不一樣的參數，但是這些 filter 做卷積的過程都是一模一樣的，你把 filter2 跟 image 做完 convolution 以後，你就會得到另外一個藍色的 4\*4 matrix，那這個藍色的 4\*4 matrix 跟之前紅色的 4\*4matrix 合起來，就叫做**Feature Map(特徵映射)**，有多少個 filter，對應就有多少個映射後的 image
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/filter2.png" width="60%;"></center>
-CNN对**不同scale的相同pattern的处理**上存在一定的困难，由于现在每一个filter size都是一样的，这意味着，如果你今天有同一个pattern，它有不同的size，有大的鸟嘴，也有小的鸟嘴，CNN并不能够自动处理这个问题；DeepMind曾经发过一篇paper，上面提到了当你input一张image的时候，它在CNN前面，再接另外一个network，这个network做的事情是，它会output一些scalar，告诉你说，它要把这个image的里面的哪些位置做旋转、缩放，然后，再丢到CNN里面，这样你其实会得到比较好的performance
+CNN對**不同scale的相同pattern的處理**上存在一定的困難，由於現在每一個filter size都是一樣的，這意味著，如果你今天有同一個pattern，它有不同的size，有大的鳥嘴，也有小的鳥嘴，CNN並不能夠自動處理這個問題；DeepMind曾經發過一篇paper，上面提到了當你input一張image的時候，它在CNN前面，再接另外一個network，這個network做的事情是，它會output一些scalar，告訴你說，它要把這個image的裡面的哪些位置做旋轉、縮放，然後，再丟到CNN裡面，這樣你其實會得到比較好的performance
 
 #### Colorful image
 
-刚才举的例子是黑白的image，所以你input的是一个matrix，如果今天是彩色的image会怎么样呢？我们知道彩色的image就是由RGB组成的，所以一个彩色的image，它就是好几个matrix叠在一起，是一个立方体，如果我今天要处理彩色的image，要怎么做呢？
+剛才舉的例子是黑白的 image，所以你 input 的是一個 matrix，如果今天是彩色的 image 會怎麼樣呢？我們知道彩色的 image 就是由 RGB 組成的，所以一個彩色的 image，它就是好幾個 matrix 疊在一起，是一個立方體，如果我今天要處理彩色的 image，要怎麼做呢？
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/rgb.png" width="60%;"></center>
-这个时候你的filter就不再是一个matrix了，它也会是一个立方体，如果你今天是RGB这三个颜色来表示一个pixel的话，那你的input就是3\*6\*6，你的filter就是3\*3\*3，你的filter的高就是3，你在做convolution的时候，就是把这个filter的9个值跟这个image里面的9个值做内积，可以想象成filter的每一层都分别跟image的三层做内积，得到的也是一个三层的output，每一个filter同时就考虑了不同颜色所代表的channel
+這個時候你的filter就不再是一個matrix了，它也會是一個立方體，如果你今天是RGB這三個顏色來表示一個pixel的話，那你的input就是3\*6\*6，你的filter就是3\*3\*3，你的filter的高就是3，你在做convolution的時候，就是把這個filter的9個值跟這個image裡面的9個值做內積，可以想象成filter的每一層都分別跟image的三層做內積，得到的也是一個三層的output，每一個filter同時就考慮了不同顏色所代表的channel
 
 #### Convolution V.s. Fully connected
 
-##### filter是特殊的”neuron“
+##### filter 是特殊的」neuron「
 
-接下来要讲的是，convolution跟fully connected有什么关系，你可能觉得说，它是一个很特别的operation，感觉跟neural network没半毛钱关系，其实，它就是一个neural network
+接下來要講的是，convolution 跟 fully connected 有什麼關係，你可能覺得說，它是一個很特別的 operation，感覺跟 neural network 沒半毛錢關係，其實，它就是一個 neural network
 
-convolution这件事情，其实就是fully connected的layer把一些weight拿掉而已，下图中绿色方框标识出的feature map的output，其实就是hidden layer的neuron的output
+convolution 這件事情，其實就是 fully connected 的 layer 把一些 weight 拿掉而已，下圖中綠色方框標識出的 feature map 的 output，其實就是 hidden layer 的 neuron 的 output
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/convolution-fully.png" width="60%;"></center>
-接下来我们来解释这件事情：
+接下來我們來解釋這件事情：
 
-如下图所示，我们在做convolution的时候，把filter放在image的左上角，然后再去做inner product，得到一个值3；这件事情等同于，我们现在把这个image的6\*6的matrix拉直变成右边这个用于input的vector，然后，你有一个红色的neuron，这些input经过这个neuron之后，得到的output是3
+如下圖所示，我們在做 convolution 的時候，把 filter 放在 image 的左上角，然後再去做 inner product，得到一個值 3；這件事情等同於，我們現在把這個 image 的 6\*6 的 matrix 拉直變成右邊這個用於 input 的 vector，然後，你有一個紅色的 neuron，這些 input 經過這個 neuron 之後，得到的 output 是 3
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/filter-neuron1.png" width="60%;"></center>
-##### 每个“neuron”只检测image的部分区域
+##### 每個「neuron」只檢測image的部分區域
 
-那这个neuron的output怎么来的呢？这个neuron实际上就是由filter转化而来的，我们把filter放在image的左上角，此时filter考虑的就是和它重合的9个pixel，假设你把这一个6\*6的image的36个pixel拉成直的vector作为input，那这9个pixel分别就对应着右侧编号1，2，3的pixel，编号7，8，9的pixel跟编号13，14，15的pixel
+那這個 neuron 的 output 怎麼來的呢？這個 neuron 實際上就是由 filter 轉化而來的，我們把 filter 放在 image 的左上角，此時 filter 考慮的就是和它重合的 9 個 pixel，假設你把這一個 6\*6 的 image 的 36 個 pixel 拉成直的 vector 作為 input，那這 9 個 pixel 分別就對應著右側編號 1，2，3 的 pixel，編號 7，8，9 的 pixel 跟編號 13，14，15 的 pixel
 
-如果我们说这个filter和image matrix做inner product以后得到的output 3，就是input vector经过某个neuron得到的output 3的话，这就代表说存在这样一个neuron，这个neuron带weight的连线，就只连接到编号为1，2，3，7，8，9，13，14，15的这9个pixel而已，而这个neuron和这9个pixel连线上所标注的的weight就是filter matrix里面的这9个数值
+如果我們說這個 filter 和 image matrix 做 inner product 以後得到的 output 3，就是 input vector 經過某個 neuron 得到的 output 3 的話，這就代表說存在這樣一個 neuron，這個 neuron 帶 weight 的連線，就只連接到編號為 1，2，3，7，8，9，13，14，15 的這 9 個 pixel 而已，而這個 neuron 和這 9 個 pixel 連線上所標注的的 weight 就是 filter matrix 裡面的這 9 個數值
 
-作为对比，Fully connected的neuron是必须连接到所有36个input上的，但是，我们现在只用连接9个input，因为我们知道要detect一个pattern，不需要看整张image，看9个input pixel就够了，所以当我们这么做的时候，就用了比较少的参数
+作為對比，Fully connected 的 neuron 是必須連接到所有 36 個 input 上的，但是，我們現在只用連接 9 個 input，因為我們知道要 detect 一個 pattern，不需要看整張 image，看 9 個 input pixel 就夠了，所以當我們這麼做的時候，就用了比較少的參數
 
-##### “neuron”之间共享参数
+##### 「neuron」之間共享參數
 
-当我们把filter做stride = 1的移动的时候，会发生什么事呢？此时我们通过filter和image matrix的内积得到另外一个output值-1，我们假设这个-1是另外一个neuron的output，那这个neuron会连接到哪些input呢？下图中这个框起来的地方正好就对应到pixel 2，3，4，pixel 8，9，10跟pixel 14，15，16
+當我們把 filter 做 stride = 1 的移動的時候，會發生什麼事呢？此時我們通過 filter 和 image matrix 的內積得到另外一個 output 值-1，我們假設這個-1 是另外一個 neuron 的 output，那這個 neuron 會連接到哪些 input 呢？下圖中這個框起來的地方正好就對應到 pixel 2，3，4，pixel 8，9，10 跟 pixel 14，15，16
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/share-weight.png" width="60%;"></center>
-你会发现output为3和-1的这两个neuron，它们分别去检测在image的两个不同位置上是否存在某个pattern，因此在Fully connected layer里它们做的是两件不同的事情，每一个neuron应该有自己独立的weight
+你會發現output為3和-1的這兩個neuron，它們分別去檢測在image的兩個不同位置上是否存在某個pattern，因此在Fully connected layer里它們做的是兩件不同的事情，每一個neuron應該有自己獨立的weight
 
-但是，当我们做这个convolution的时候，首先我们把每一个neuron前面连接的weight减少了，然后我们强迫某些neuron(比如上图中output为3和-1的两个neuron)，它们一定要共享一组weight，虽然这两个neuron连接到的pixel对象各不相同，但它们用的weight都必须是一样的，等于filter里面的元素值，这件事情就叫做weight share，当我们做这件事情的时候，用的参数，又会比原来更少
+但是，當我們做這個 convolution 的時候，首先我們把每一個 neuron 前面連接的 weight 減少了，然後我們強迫某些 neuron(比如上圖中 output 為 3 和-1 的兩個 neuron)，它們一定要共享一組 weight，雖然這兩個 neuron 連接到的 pixel 對象各不相同，但它們用的 weight 都必須是一樣的，等於 filter 裡面的元素值，這件事情就叫做 weight share，當我們做這件事情的時候，用的參數，又會比原來更少
 
-##### 总结
+##### 總結
 
-因此我们可以这样想，有这样一些特殊的neuron，它们只连接着9条带weight的线(9=3\*3对应着filter的元素个数，这些weight也就是filter内部的元素值，上图中圆圈的颜色与连线的颜色一一对应)
+因此我們可以這樣想，有這樣一些特殊的 neuron，它們只連接著 9 條帶 weight 的線(9=3\*3 對應著 filter 的元素個數，這些 weight 也就是 filter 內部的元素值，上圖中圓圈的顏色與連線的顏色一一對應)
 
-当filter在image matrix上移动做convolution的时候，每次移动做的事情实际上是去检测这个地方有没有某一种pattern，对于Fully connected layer来说，它是对整张image做detection的，因此每次去检测image上不同地方有没有pattern其实是不同的事情，所以这些neuron都必须连接到整张image的所有pixel上，并且不同neuron的连线上的weight都是相互独立的
+當 filter 在 image matrix 上移動做 convolution 的時候，每次移動做的事情實際上是去檢測這個地方有沒有某一種 pattern，對於 Fully connected layer 來說，它是對整張 image 做 detection 的，因此每次去檢測 image 上不同地方有沒有 pattern 其實是不同的事情，所以這些 neuron 都必須連接到整張 image 的所有 pixel 上，並且不同 neuron 的連線上的 weight 都是相互獨立的
 
-==**那对于convolution layer来说，首先它是对image的一部分做detection的，因此它的neuron只需要连接到image的部分pixel上，对应连线所需要的weight参数就会减少；其次由于是用同一个filter去检测不同位置的pattern，所以这对convolution layer来说，其实是同一件事情，因此不同的neuron，虽然连接到的pixel对象各不相同，但是在“做同一件事情”的前提下，也就是用同一个filter的前提下，这些neuron所使用的weight参数都是相同的，通过这样一张weight share的方式，再次减少network所需要用到的weight参数**==
+==**那對於 convolution layer 來說，首先它是對 image 的一部分做 detection 的，因此它的 neuron 只需要連接到 image 的部分 pixel 上，對應連線所需要的 weight 參數就會減少；其次由於是用同一個 filter 去檢測不同位置的 pattern，所以這對 convolution layer 來說，其實是同一件事情，因此不同的 neuron，雖然連接到的 pixel 對象各不相同，但是在「做同一件事情」的前提下，也就是用同一個 filter 的前提下，這些 neuron 所使用的 weight 參數都是相同的，通過這樣一張 weight share 的方式，再次減少 network 所需要用到的 weight 參數**==
 
-CNN的本质，就是减少参数的过程
+CNN 的本質，就是減少參數的過程
 
-##### 补充
+##### 補充
 
-看到这里你可能会问，这样的network该怎么搭建，又该怎么去train呢？
+看到這裡你可能會問，這樣的 network 該怎麼搭建，又該怎麼去 train 呢？
 
-首先，第一件事情就是这都是用toolkit做的，所以你大概不会自己去写；如果你要自己写的话，它其实就是跟原来的Backpropagation用一模一样的做法，只是有一些weight就永远是0，你就不去train它，它就永远是0
+首先，第一件事情就是這都是用 toolkit 做的，所以你大概不會自己去寫；如果你要自己寫的話，它其實就是跟原來的 Backpropagation 用一模一樣的做法，只是有一些 weight 就永遠是 0，你就不去 train 它，它就永遠是 0
 
-然后，怎么让某些neuron的weight值永远都是一样呢？你就用一般的Backpropagation的方法，对每个weight都去算出gradient，再把本来要tight在一起、要share weight的那些weight的gradient平均，然后，让他们update同样值就ok了
+然後，怎麼讓某些 neuron 的 weight 值永遠都是一樣呢？你就用一般的 Backpropagation 的方法，對每個 weight 都去算出 gradient，再把本來要 tight 在一起、要 share weight 的那些 weight 的 gradient 平均，然後，讓他們 update 同樣值就 ok 了
 
 #### Max Pooling
 
 ##### Operation of max pooling
 
-相较于convolution，max pooling是比较简单的，它就是做subsampling，根据filter 1，我们得到一个4\*4的matrix，根据filter 2，你得到另外一个4\*4的matrix，接下来，我们要做什么事呢？
+相較於 convolution，max pooling 是比較簡單的，它就是做 subsampling，根據 filter 1，我們得到一個 4\*4 的 matrix，根據 filter 2，你得到另外一個 4\*4 的 matrix，接下來，我們要做什麼事呢？
 
-我们把output四个分为一组，每一组里面通过选取平均值或最大值的方式，把原来4个value合成一个 value，这件事情相当于在image每相邻的四块区域内都挑出一块来检测，这种subsampling的方式就可以让你的image缩小！
+我們把 output 四個分為一組，每一組裡面通過選取平均值或最大值的方式，把原來 4 個 value 合成一個 value，這件事情相當於在 image 每相鄰的四塊區域內都挑出一塊來檢測，這種 subsampling 的方式就可以讓你的 image 縮小！
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/max-pooling.png" width="60%;"></center>
-讲到这里你可能会有一个问题，如果取Maximum放到network里面，不就没法微分了吗？max这个东西，感觉是没有办法对它微分的啊，其实是可以的，后面的章节会讲到Maxout network，会告诉你怎么用微分的方式来处理它
+講到這裡你可能會有一個問題，如果取Maximum放到network裡面，不就沒法微分了嗎？max這個東西，感覺是沒有辦法對它微分的啊，其實是可以的，後面的章節會講到Maxout network，會告訴你怎麼用微分的方式來處理它
 
 ##### Convolution + Max Pooling
 
-所以，结论是这样的：
+所以，結論是這樣的：
 
-做完一次convolution加一次max pooling，我们就把原来6\*6的image，变成了一个2\*2的image；至于这个2\*2的image，它每一个pixel的深度，也就是每一个pixel用几个value来表示，就取决于你有几个filter，如果你有50个filter，就是50维，像下图中是两个filter，对应的深度就是两维
+做完一次 convolution 加一次 max pooling，我們就把原來 6\*6 的 image，變成了一個 2\*2 的 image；至於這個 2\*2 的 image，它每一個 pixel 的深度，也就是每一個 pixel 用幾個 value 來表示，就取決於你有幾個 filter，如果你有 50 個 filter，就是 50 維，像下圖中是兩個 filter，對應的深度就是兩維
 
-所以，这是一个新的比较小的image，它表示的是不同区域上提取到的特征，实际上不同的filter检测的是该image同一区域上的不同特征属性，所以每一层channel(通道)代表的是一种属性，一块区域有几种不同的属性，就有几层不同的channel，对应的就会有几个不同的filter对其进行convolution操作
+所以，這是一個新的比較小的 image，它表示的是不同區域上提取到的特徵，實際上不同的 filter 檢測的是該 image 同一區域上的不同特徵屬性，所以每一層 channel(通道)代表的是一種屬性，一塊區域有幾種不同的屬性，就有幾層不同的 channel，對應的就會有幾個不同的 filter 對其進行 convolution 操作
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/max-pool.png" width="60%;"></center>
-这件事情可以repeat很多次，你可以把得到的这个比较小的image，再次进行convolution和max pooling的操作，得到一个更小的image，依次类推
+這件事情可以repeat很多次，你可以把得到的這個比較小的image，再次進行convolution和max pooling的操作，得到一個更小的image，依次類推
 
-有这样一个问题：假设我第一个convolution有25个filter，通过这些filter得到25个feature map，然后repeat的时候第二个convolution也有25个filter，那这样做完，我是不是会得到25^2个feature map？
+有這樣一個問題：假設我第一個 convolution 有 25 個 filter，通過這些 filter 得到 25 個 feature map，然後 repeat 的時候第二個 convolution 也有 25 個 filter，那這樣做完，我是不是會得到 25^2 個 feature map？
 
-其实不是这样的，你这边做完一次convolution，得到25个feature map之后再做一次convolution，还是会得到25个feature map，因为convolution在考虑input的时候，是会考虑深度的，它并不是每一个channel分开考虑，而是一次考虑所有的channel，所以，你convolution这边有多少个filter，再次output的时候就会有多少个channel
+其實不是這樣的，你這邊做完一次 convolution，得到 25 個 feature map 之後再做一次 convolution，還是會得到 25 個 feature map，因為 convolution 在考慮 input 的時候，是會考慮深度的，它並不是每一個 channel 分開考慮，而是一次考慮所有的 channel，所以，你 convolution 這邊有多少個 filter，再次 output 的時候就會有多少個 channel
 
-因此你这边有25个channel，经过含有25个filter的convolution之后output还会是25个channel，只是这边的每一个channel，它都是一个cubic(立方体)，它的高有25个value那么高
+因此你這邊有 25 個 channel，經過含有 25 個 filter 的 convolution 之後 output 還會是 25 個 channel，只是這邊的每一個 channel，它都是一個 cubic(立方體)，它的高有 25 個 value 那麼高
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/channel.png" width="60%;"></center>
 #### Flatten
 
-做完convolution和max pooling之后，就是FLatten和Fully connected Feedforward network的部分
+做完 convolution 和 max pooling 之後，就是 FLatten 和 Fully connected Feedforward network 的部分
 
-Flatten的意思是，把左边的feature map拉直，然后把它丢进一个Fully connected Feedforward network，然后就结束了，也就是说，我们之前通过CNN提取出了image的feature，它相较于原先一整个image的vetor，少了很大一部分内容，因此需要的参数也大幅度地减少了，但最终，也还是要丢到一个Fully connected的network中去做最后的分类工作
+Flatten 的意思是，把左邊的 feature map 拉直，然後把它丟進一個 Fully connected Feedforward network，然後就結束了，也就是說，我們之前通過 CNN 提取出了 image 的 feature，它相較於原先一整個 image 的 vetor，少了很大一部分內容，因此需要的參數也大幅度地減少了，但最終，也還是要丟到一個 Fully connected 的 network 中去做最後的分類工作
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/fatten.png" width="50%;"></center>
 #### CNN in Keras
 
-##### 内容简介
+##### 內容簡介
 
-接下来就讲一下，如何用Keras来implement CNN，实际上在compile、training和fitting的部分，内容跟DNN是一模一样的，对CNN来说，唯一需要改变的是network structure，以及input的format
+接下來就講一下，如何用 Keras 來 implement CNN，實際上在 compile、training 和 fitting 的部分，內容跟 DNN 是一模一樣的，對 CNN 來說，唯一需要改變的是 network structure，以及 input 的 format
 
-本来在DNN里，input是一个由image拉直展开而成的vector，但现在如果是CNN的话，它是会考虑input image的几何空间的，所以不能直接input一个vector，而是要input一个tensor给它(tensor就是高维的vector)，这里你要给它一个三维的vector，一个image的长宽各是一维，如果它是彩色的话，RGB就是第三维，所以你要assign一个三维的matrix，这个高维的matrix就叫做tensor
+本來在 DNN 里，input 是一個由 image 拉直展開而成的 vector，但現在如果是 CNN 的話，它是會考慮 input image 的幾何空間的，所以不能直接 input 一個 vector，而是要 input 一個 tensor 給它(tensor 就是高維的 vector)，這裡你要給它一個三維的 vector，一個 image 的長寬各是一維，如果它是彩色的話，RGB 就是第三維，所以你要 assign 一個三維的 matrix，這個高維的 matrix 就叫做 tensor
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/cnn-keras1.png" width="60%;"></center>
-那怎么implement一个convolution的layer呢？
+那怎麼implement一個convolution的layer呢？
 
-~~~python
+```python
 model2.add( Convolution2D(25,3,3, input_shape=(28,28,1)) )
-~~~
+```
 
-还是用`model.add`增加CNN的layer，将原先的Dense改成Convolution2D，参数25代表你有25个filter，参数3,3代表你的filter都是3\*3的matrix，此外你还需要告诉model，你input的image的shape是什么样子的，假设我现在要做手写数字识别，input就是28\*28的image，又因为它的每一个pixel都只有单一颜色，因此`input_shape`的值就是(28,28,1)，如果是RGB的话，1就要改成3
+還是用`model.add`增加 CNN 的 layer，將原先的 Dense 改成 Convolution2D，參數 25 代表你有 25 個 filter，參數 3,3 代表你的 filter 都是 3\*3 的 matrix，此外你還需要告訴 model，你 input 的 image 的 shape 是什麼樣子的，假設我現在要做手寫數字識別，input 就是 28\*28 的 image，又因為它的每一個 pixel 都只有單一顏色，因此`input_shape`的值就是(28,28,1)，如果是 RGB 的話，1 就要改成 3
 
-然后增加一层Max Pooling的layer
+然後增加一層 Max Pooling 的 layer
 
-~~~python
+```python
 model2.add( MaxPooling2D(2,2) )
-~~~
+```
 
-这里参数(2,2)指的是，我们把通过convolution得到的feature map，按照2\*2的方式分割成一个个区域，每次选取最大的那个值，并将这些值组成一个新的比较小的image，作为subsampling的结果
+這裡參數(2,2)指的是，我們把通過 convolution 得到的 feature map，按照 2\*2 的方式分割成一個個區域，每次選取最大的那個值，並將這些值組成一個新的比較小的 image，作為 subsampling 的結果
 
-##### 过程描述
+##### 過程描述
 
-- 假设我们input是一个1\*28\*28的image
+- 假設我們 input 是一個 1\*28\*28 的 image
 
-- 通过25个filter的convolution layer以后你得到的output，会有25个channel，又因为filter的size是3\*3，因此如果不考虑image边缘处的处理的话，得到的channel会是26\*26的，因此通过第一个convolution得到25\*26\*26的cubic image(这里把这张image想象成长宽为26，高为25的cubic立方体)
+- 通過 25 個 filter 的 convolution layer 以後你得到的 output，會有 25 個 channel，又因為 filter 的 size 是 3\*3，因此如果不考慮 image 邊緣處的處理的話，得到的 channel 會是 26\*26 的，因此通過第一個 convolution 得到 25\*26\*26 的 cubic image(這裡把這張 image 想象成長寬為 26，高為 25 的 cubic 立方體)
 
-- 接下来就是做Max pooling，把2\*2的pixel分为一组，然后从里面选一个最大的组成新的image，大小为25\*13\*13(cubic长宽各被砍掉一半)
+- 接下來就是做 Max pooling，把 2\*2 的 pixel 分為一組，然後從裡面選一個最大的組成新的 image，大小為 25\*13\*13(cubic 長寬各被砍掉一半)
 
-- 再做一次convolution，假设这次选择50个filter，每个filter size是3\*3的话，output的channel就变成有50个，那13\*13的image，通过3\*3的filter，就会变成11\*11，因此通过第二个convolution得到50\*11\*11的image(得到一个新的长宽为11，高为50的cubic)
+- 再做一次 convolution，假設這次選擇 50 個 filter，每個 filter size 是 3\*3 的話，output 的 channel 就變成有 50 個，那 13\*13 的 image，通過 3\*3 的 filter，就會變成 11\*11，因此通過第二個 convolution 得到 50\*11\*11 的 image(得到一個新的長寬為 11，高為 50 的 cubic)
 
-- 再做一次Max Pooling，变成50\*50\*5
+- 再做一次 Max Pooling，變成 50\*50\*5
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/cnn-keras3.png" width="60%;"></center>
-在第一个convolution里面，每一个filter都有9个参数，它就是一个3\*3的matrix；但是在第二个convolution layer里面，虽然每一个filter都是3\*3，但它其实不是3\*3个参数，因为它的input是一个25\*13\*13的cubic，这个cubic的channel有25个，所以要用同样高度的cubic filter对它进行卷积，于是我们的filter实际上是一个25\*3\*3的cubic，所以这边每个filter共有225个参数
+在第一個convolution裡面，每一個filter都有9個參數，它就是一個3\*3的matrix；但是在第二個convolution layer裡面，雖然每一個filter都是3\*3，但它其實不是3\*3個參數，因為它的input是一個25\*13\*13的cubic，這個cubic的channel有25個，所以要用同樣高度的cubic filter對它進行卷積，於是我們的filter實際上是一個25\*3\*3的cubic，所以這邊每個filter共有225個參數
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/cnn-keras2.png" width="60%;"></center>
-通过两次convolution和max pooling的组合，最终的image变成了50\*5\*5的size，然后使用Flatten将这个image拉直，变成一个1250维的vector，再把它丢到一个Fully Connected Feedforward network里面，network structure就搭建完成了
+通過兩次convolution和max pooling的組合，最終的image變成了50\*5\*5的size，然後使用Flatten將這個image拉直，變成一個1250維的vector，再把它丟到一個Fully Connected Feedforward network裡面，network structure就搭建完成了
 
-##### 一个重要的问题
+##### 一個重要的問題
 
-看到这里，你可能会有一个疑惑，第二次convolution的input是25\*13\*13的cubic，用50个3\*3的filter卷积后，得到的输出时应该是50个cubic，且每个cubic的尺寸为25\*11\*11，那么max pooling把长宽各砍掉一半后就是50层25\*5\*5的cubic，那flatten后不应该就是50\*25\*5\*5吗？
+看到這裡，你可能會有一個疑惑，第二次 convolution 的 input 是 25\*13\*13 的 cubic，用 50 個 3\*3 的 filter 卷積後，得到的輸出時應該是 50 個 cubic，且每個 cubic 的尺寸為 25\*11\*11，那麼 max pooling 把長寬各砍掉一半後就是 50 層 25\*5\*5 的 cubic，那 flatten 後不應該就是 50\*25\*5\*5 嗎？
 
-其实不是这样的，在第二次做convolution的时候，我们是用25\*3\*3的cubic filter对25\*13\*13的cubic input进行卷积操作的，filter的每一层和input cubic中对应的每一层(也就是每一个channel)，它们进行内积后，还要把cubic的25个channel的内积值进行求和，作为这个“neuron”的output，它是一个scalar，这个cubic filter对整个cubic input做完一遍卷积操作后，得到的是一层scalar，然后有50个cubic filter，对应着50层scalar，因此最终得到的output是一个50\*11\*11的cubic！
+其實不是這樣的，在第二次做 convolution 的時候，我們是用 25\*3\*3 的 cubic filter 對 25\*13\*13 的 cubic input 進行卷積操作的，filter 的每一層和 input cubic 中對應的每一層(也就是每一個 channel)，它們進行內積後，還要把 cubic 的 25 個 channel 的內積值進行求和，作為這個「neuron」的 output，它是一個 scalar，這個 cubic filter 對整個 cubic input 做完一遍卷積操作後，得到的是一層 scalar，然後有 50 個 cubic filter，對應著 50 層 scalar，因此最終得到的 output 是一個 50\*11\*11 的 cubic！
 
-这里的关键是filter和image都是cubic，每个cubic filter有25层高，它和同样有25层高的cubic image做卷积，并不是单单把每个cubic对应的channel进行内积，还会把这些内积求和！！！最终变为1层，因此==**两个矩阵或者tensor做了卷积后，不管之前的维数如何，都会变为一个scalor！**==，故如果有50个Filter，无论input是什么样子的，最终的output还会是50层
-
-
+這裡的關鍵是 filter 和 image 都是 cubic，每個 cubic filter 有 25 層高，它和同樣有 25 層高的 cubic image 做卷積，並不是單單把每個 cubic 對應的 channel 進行內積，還會把這些內積求和！！！最終變為 1 層，因此==**兩個矩陣或者 tensor 做了卷積後，不管之前的維數如何，都會變為一個 scalor！**==，故如果有 50 個 Filter，無論 input 是什麼樣子的，最終的 output 還會是 50 層
 
 #### Appendix：CNN in Keras2.0
 
-这里还是举**手写数字识别**的例子，将单纯使用DNN和加上CNN的情况作为对比
+這裡還是舉**手寫數字識別**的例子，將單純使用 DNN 和加上 CNN 的情況作為對比
 
 ##### code
 
-~~~python
+```python
 import numpy as np
 from keras.models import Sequential
 from keras.layers import Convolution2D, MaxPooling2D, Flatten, Conv2D
@@ -319,24 +317,24 @@ if __name__ == '__main__':
     result_test = model2.evaluate(x_test, y_test)
     print('\nTest CNN Acc:\n', result_test[1])
 
-~~~
+```
 
 ##### result
 
 ###### DNN
 
-~~~python
+```python
 Using TensorFlow backend.
 _________________________________________________________________
-Layer (type)                 Output Shape              Param #   
+Layer (type)                 Output Shape              Param #
 =================================================================
-dense_1 (Dense)              (None, 500)               392500    
+dense_1 (Dense)              (None, 500)               392500
 _________________________________________________________________
-dense_2 (Dense)              (None, 500)               250500    
+dense_2 (Dense)              (None, 500)               250500
 _________________________________________________________________
-dense_3 (Dense)              (None, 500)               250500    
+dense_3 (Dense)              (None, 500)               250500
 _________________________________________________________________
-dense_4 (Dense)              (None, 10)                5010      
+dense_4 (Dense)              (None, 10)                5010
 =================================================================
 Total params: 898,510
 Trainable params: 898,510
@@ -382,32 +380,32 @@ Epoch 19/20
 10000/10000 [==============================] - 2s 173us/step - loss: 5.6810e-05 - acc: 1.0000
 Epoch 20/20
 10000/10000 [==============================] - 2s 172us/step - loss: 4.8757e-05 - acc: 1.0000
-        
+
 10000/10000 [==============================] - 1s 97us/step
 Train Acc: 1.0
 10000/10000 [==============================] - 1s 77us/step
 Test Acc: 0.9661
-~~~
+```
 
 ###### CNN
 
-~~~python
+```python
 _________________________________________________________________
-Layer (type)                 Output Shape              Param #   
+Layer (type)                 Output Shape              Param #
 =================================================================
-conv2d_1 (Conv2D)            (None, 25, 26, 26)        250       
+conv2d_1 (Conv2D)            (None, 25, 26, 26)        250
 _________________________________________________________________
-max_pooling2d_1 (MaxPooling2 (None, 12, 13, 26)        0         
+max_pooling2d_1 (MaxPooling2 (None, 12, 13, 26)        0
 _________________________________________________________________
-conv2d_2 (Conv2D)            (None, 10, 11, 50)        11750     
+conv2d_2 (Conv2D)            (None, 10, 11, 50)        11750
 _________________________________________________________________
-max_pooling2d_2 (MaxPooling2 (None, 5, 5, 50)          0         
+max_pooling2d_2 (MaxPooling2 (None, 5, 5, 50)          0
 _________________________________________________________________
-flatten_1 (Flatten)          (None, 1250)              0         
+flatten_1 (Flatten)          (None, 1250)              0
 _________________________________________________________________
-dense_5 (Dense)              (None, 100)               125100    
+dense_5 (Dense)              (None, 100)               125100
 _________________________________________________________________
-dense_6 (Dense)              (None, 10)                1010      
+dense_6 (Dense)              (None, 10)                1010
 =================================================================
 Total params: 138,110
 Trainable params: 138,110
@@ -458,5 +456,4 @@ Epoch 20/20
 Train CNN Acc: 1.0
 10000/10000 [==============================] - 5s 526us/step
 Test CNN Acc: 0.98
-~~~
-
+```

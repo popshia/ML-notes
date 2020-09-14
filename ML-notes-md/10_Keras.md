@@ -2,241 +2,241 @@
 
 #### Why Keras
 
-你可能会问，为什么不学TensorFlow呢？明明tensorflow才是目前最流行的machine learning库之一啊。其实，它并没有那么好用，tensorflow和另外一个功能相近的toolkit theano，它们是非常flexible的，你甚至可以把它想成是一个微分器，它完全可以做deep learning以外的事情，因为它的作用就是帮你算微分，拿到微分之后呢，你就可以去算gradient descent之类，而这么flexible的toolkit学起来是有一定的难度的，你没有办法在半个小时之内精通这个toolkit
+你可能會問，為什麼不學 TensorFlow 呢？明明 tensorflow 才是目前最流行的 machine learning 庫之一啊。其實，它並沒有那麼好用，tensorflow 和另外一個功能相近的 toolkit theano，它們是非常 flexible 的，你甚至可以把它想成是一個微分器，它完全可以做 deep learning 以外的事情，因為它的作用就是幫你算微分，拿到微分之後呢，你就可以去算 gradient descent 之類，而這麼 flexible 的 toolkit 學起來是有一定的難度的，你沒有辦法在半個小時之內精通這個 toolkit
 
-但是另一个toolkit——Keras，你是可以在数十分钟内就熟悉并精通它的，然后用它来implement一个自己的deep learning，Keras其实是tensorflow和theano的interface，所以用Keras就等于在用tensorflow，只是有人帮你把操纵tensorflow这件事情先帮你写好
+但是另一個 toolkit——Keras，你是可以在數十分鐘內就熟悉並精通它的，然後用它來 implement 一個自己的 deep learning，Keras 其實是 tensorflow 和 theano 的 interface，所以用 Keras 就等於在用 tensorflow，只是有人幫你把操縱 tensorflow 這件事情先幫你寫好
 
-所以Keras是比较容易去学习和使用的，并且它也有足够的弹性，除非你自己想要做deep learning的研究，去设计一个自己的network，否则多数你可以想到的network，在Keras里都有现成的function可以拿来使用；因为它背后就是tensorflow or theano，所以如果你想要精进自己的能力的话，你永远可以去改Keras背后的tensorflow的code，然后做更厉害的事情
+所以 Keras 是比較容易去學習和使用的，並且它也有足夠的彈性，除非你自己想要做 deep learning 的研究，去設計一個自己的 network，否則多數你可以想到的 network，在 Keras 里都有現成的 function 可以拿來使用；因為它背後就是 tensorflow or theano，所以如果你想要精進自己的能力的話，你永遠可以去改 Keras 背後的 tensorflow 的 code，然後做更厲害的事情
 
-而且，现在Keras已经成为了Tensorflow官方的API，它像搭积木一样简单
+而且，現在 Keras 已經成為了 Tensorflow 官方的 API，它像搭積木一樣簡單
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/keras.png" width="50%;" /></center>
-接下来我们用手写数字识别的demo来介绍一下"Hello world" of deep learning
+接下來我們用手寫數字識別的demo來介紹一下"Hello world" of deep learning
 
 #### prepare data
 
-使用的data是MNIST的Data：http://yann.lecun.com/exdb/mnist/
+使用的 data 是 MNIST 的 Data：http://yann.lecun.com/exdb/mnist/
 
-Keras提供了自动下载MNIST data的function：http://keras.io/datasets/
+Keras 提供了自動下載 MNIST data 的 function：http://keras.io/datasets/
 
 #### process
 
-首先要先导入keras包：`from keras.models import Sequential`
+首先要先導入 keras 包：`from keras.models import Sequential`
 
 ##### step 1：define a set of function——neural network
 
-先用`Sequential()`宣告建立一个model
+先用`Sequential()`宣告建立一個 model
 
-~~~python
+```python
 model = Sequential()
-~~~
+```
 
-然后开始叠一个neural network：它有两个hidden layer，每个hidden layer都有500个neuron
+然後開始疊一個 neural network：它有兩個 hidden layer，每個 hidden layer 都有 500 個 neuron
 
-- 加一个**Fully connected**的layer——用**Dense**来表示，当然你也可以加别的layer，比如convolution的layer
+- 加一個**Fully connected**的 layer——用**Dense**來表示，當然你也可以加別的 layer，比如 convolution 的 layer
 
-    之前我们说过，input layer比较特殊，它并不是真正意义上的layer，因为它没有所谓的"neuron"，于是Keras在model里面加的第一层layer会有一些特殊，要求同时输入`input_dim`和`units`，分别代表第一层hidden layer输入维数(也就是input layer的dimension)和第一层hidden layer的neuron个数
+  之前我們說過，input layer 比較特殊，它並不是真正意義上的 layer，因為它沒有所謂的"neuron"，於是 Keras 在 model 裡面加的第一層 layer 會有一些特殊，要求同時輸入`input_dim`和`units`，分別代表第一層 hidden layer 輸入維數(也就是 input layer 的 dimension)和第一層 hidden layer 的 neuron 個數
 
-    `input_dim=28*28`表示一个28*28=784长度的vector，代表image；`units=500`表示该层hidden layer要有500个neuron；`activation=‘sigmoid’`表示激活函数使用sigmoid function
+  `input_dim=28*28`表示一個 28\*28=784 長度的 vector，代表 image；`units=500`表示該層 hidden layer 要有 500 個 neuron；`activation=‘sigmoid’`表示激活函數使用 sigmoid function
 
-    ~~~python
-    model.add(Dense(input_dim=28 * 28, units=500, activation='sigmoid'))
-    ~~~
+  ```python
+  model.add(Dense(input_dim=28 * 28, units=500, activation='sigmoid'))
+  ```
 
-    加完layer之后，还需要设定该层hidden layer所使用的activation function，这里直接就用sigmoid function
+  加完 layer 之後，還需要設定該層 hidden layer 所使用的 activation function，這裡直接就用 sigmoid function
 
-    在Keras里还可以选别的activation function，比如softplus、softsign、relu、tanh、hard_sigmoid、linear等等，如果你要加上自己的activation function，其实也蛮容易的，只要在Keras里面找到写activation function的地方，自己再加一个进去就好了
+  在 Keras 里還可以選別的 activation function，比如 softplus、softsign、relu、tanh、hard_sigmoid、linear 等等，如果你要加上自己的 activation function，其實也蠻容易的，只要在 Keras 裡面找到寫 activation function 的地方，自己再加一個進去就好了
 
-- 从第二层hidden layer开始，如果要在model里再加一个layer，就用model.add增加一个Dense全连接层，包括`units`和`activation`参数
+- 從第二層 hidden layer 開始，如果要在 model 里再加一個 layer，就用 model.add 增加一個 Dense 全連接層，包括`units`和`activation`參數
 
-    这边就不需要再redefine `input_dim`是多少了，因为新增layer的input就等于前一个layer的output，Keras自己是知道这件事情的，所以你就直接告诉它说，新加的layer有500个neuron就好了
+  這邊就不需要再 redefine `input_dim`是多少了，因為新增 layer 的 input 就等於前一個 layer 的 output，Keras 自己是知道這件事情的，所以你就直接告訴它說，新加的 layer 有 500 個 neuron 就好了
 
-    这里同样把activation function设置为sigmoid function
+  這裡同樣把 activation function 設置為 sigmoid function
 
-    ~~~python
-    model.add(Dense(units=500, activation='sigmoid'))
-    ~~~
+  ```python
+  model.add(Dense(units=500, activation='sigmoid'))
+  ```
 
-- 最后，由于是分10个数字，所以output是10维，如果把output layer当做一个Multi-class classifier的话，那activation function就用softmax(这样可以让output每一维的几率之和为1，表现得更像一个概率分布)，当然你也可以选择别的
+- 最後，由於是分 10 個數字，所以 output 是 10 維，如果把 output layer 當做一個 Multi-class classifier 的話，那 activation function 就用 softmax(這樣可以讓 output 每一維的幾率之和為 1，表現得更像一個概率分布)，當然你也可以選擇別的
 
-    ~~~python
-    model.add(Dense(units=10, activation='softmax'))
-    ~~~
+  ```python
+  model.add(Dense(units=10, activation='softmax'))
+  ```
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/keras-step1.png" width="60%;" /></center>
-注：上图中写的是Keras1.0的语法，在笔记中给出的则是Keras2.0的语法，应当使用后者
+注：上圖中寫的是Keras1.0的語法，在筆記中給出的則是Keras2.0的語法，應當使用後者
 
 ##### Step 2：goodness of function——cross entropy
 
-evaluate一个function的好坏，你要做的事情是用model.compile去定义你的loss function是什么
+evaluate 一個 function 的好壞，你要做的事情是用 model.compile 去定義你的 loss function 是什麼
 
-比如说你要用**cross entropy**的话，那你的loss参数就是**categorical_crossentropy**(Keras里的写法)
+比如說你要用**cross entropy**的話，那你的 loss 參數就是**categorical_crossentropy**(Keras 里的寫法)
 
-~~~python
+```python
 model.compile(loss='categorical_crossentropy',
               optimizer='adam',
               metrics=['accuracy'])
-~~~
+```
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/keras-step2.png" width="60%;" /></center>
 ##### Step 3：pick the best function
 
 ###### Configuration
 
-在training之前，你要先下一些**configuration**告诉它training的时候，你打算要怎么做
+在 training 之前，你要先下一些**configuration**告訴它 training 的時候，你打算要怎麼做
 
-你要定义的第一个东西是optimizer，也就是说，你要用什么样的方式来找最好的function，虽然optimizer后面可以接不同的方式，但是这些不同的方式，其实都是gradient descent类似的方法
+你要定義的第一個東西是 optimizer，也就是說，你要用什麼樣的方式來找最好的 function，雖然 optimizer 後面可以接不同的方式，但是這些不同的方式，其實都是 gradient descent 類似的方法
 
-有一些方法machine会自动地，empirically(根据经验地)决定learning rate的值应该是多少，所以这些方法是不需要给它learning rate的，Keras里面有诸如：SGD(gradient descent)、RMSprop、Adagrad、Adadelta、Adam、Adamax、Nadam之类的寻找最优参数的方法，它们都是gradient descent的方式
+有一些方法 machine 會自動地，empirically(根據經驗地)決定 learning rate 的值應該是多少，所以這些方法是不需要給它 learning rate 的，Keras 裡面有諸如：SGD(gradient descent)、RMSprop、Adagrad、Adadelta、Adam、Adamax、Nadam 之類的尋找最優參數的方法，它們都是 gradient descent 的方式
 
-~~~python
+```python
 model.compile(loss='categorical crossentropy',
               optimizer='adam',
               metrics=['accuracy'])
-~~~
+```
 
 ###### Training
 
-决定好怎么做gradient descent之后，就是实际去做训练了，去跑gradient descent找最优参数了
+決定好怎麼做 gradient descent 之後，就是實際去做訓練了，去跑 gradient descent 找最優參數了
 
-这里使用的是`model.fit`方法，要给它4给input(假设我们给了10000张image作Training data)
+這裡使用的是`model.fit`方法，要給它 4 給 input(假設我們給了 10000 張 image 作 Training data)
 
-- 第一个input是Training data——`x_train`
+- 第一個 input 是 Training data——`x_train`
 
-    在这个case里，Training data就是一张一张的image，需要把它存放到numpy array里面，这个numpy array是two-dimension的matrix，每张image存为numpy array的一个行向量(它把image中28\*28个像素值拉成一个行向量)，总共有10000行，它的列数就是每张image的像素点个数，即28\*28=784列
+  在這個 case 里，Training data 就是一張一張的 image，需要把它存放到 numpy array 裡面，這個 numpy array 是 two-dimension 的 matrix，每張 image 存為 numpy array 的一個行向量(它把 image 中 28\*28 個像素值拉成一個行向量)，總共有 10000 行，它的列數就是每張 image 的像素點個數，即 28\*28=784 列
 
-- 第二个input是每一个Training data对应的label——`y_train`
+- 第二個 input 是每一個 Training data 對應的 label——`y_train`
 
-    在这个case里，就是标志着这张image对应的是0~9的那一个数字，同样也是two-dimension的numpy array，每张image的label存为numpy array的一个行向量，用来表示0~9这10个数字中的某一个数，所以是10列，用的是one-hot编码，10个数字中对了对应image的那个数字为1之外其余都是0
+  在這個 case 里，就是標誌著這張 image 對應的是 0~9 的那一個數字，同樣也是 two-dimension 的 numpy array，每張 image 的 label 存為 numpy array 的一個行向量，用來表示 0~9 這 10 個數字中的某一個數，所以是 10 列，用的是 one-hot 編碼，10 個數字中對了對應 image 的那個數字為 1 之外其餘都是 0
 
-- 第三个input是`batch_size`，告诉Keras我们的batch要有多大
+- 第三個 input 是`batch_size`，告訴 Keras 我們的 batch 要有多大
 
-    在这个case里，batch_size=100，表示我们要把100张随机选择的image放到一个batch里面，然后把所有的image分成一个个不同的batch，Keras会自动帮你完成随机选择image的过程，不需要自己去code
+  在這個 case 里，batch_size=100，表示我們要把 100 張隨機選擇的 image 放到一個 batch 裡面，然後把所有的 image 分成一個個不同的 batch，Keras 會自動幫你完成隨機選擇 image 的過程，不需要自己去 code
 
-- 第四个input是`nb_epoch`，表示对所有batch的训练要做多少次
+- 第四個 input 是`nb_epoch`，表示對所有 batch 的訓練要做多少次
 
-    在这个case里，nb_epoch=20，表示要对所有的batch进行20遍gradient descent的训练，每看到一个batch就update一次参赛，假设现在每一个epoch里面有100个batch，就对应着update 100次参数，20个epoch就是update 2000次参数
+  在這個 case 里，nb_epoch=20，表示要對所有的 batch 進行 20 遍 gradient descent 的訓練，每看到一個 batch 就 update 一次參賽，假設現在每一個 epoch 裡面有 100 個 batch，就對應著 update 100 次參數，20 個 epoch 就是 update 2000 次參數
 
-注：如果batch_size设为1，就是**Stochastic Gradient Descent**(随机梯度下降法)，这个我们之前在讨论gradient descent的时候有提到，就是每次拿到一个样本点就update一次参数，而不是每次拿到一批样本点的error之后才去update参数，因此stochastic gradient descent的好处是它的速度比较快，虽然每次update参数的方向是不稳定的，但是**天下武功，唯快不破**，在别人出一拳的时候，它就已经出了100拳了，所以它是比较强的
+注：如果 batch_size 設為 1，就是**Stochastic Gradient Descent**(隨機梯度下降法)，這個我們之前在討論 gradient descent 的時候有提到，就是每次拿到一個樣本點就 update 一次參數，而不是每次拿到一批樣本點的 error 之後才去 update 參數，因此 stochastic gradient descent 的好處是它的速度比較快，雖然每次 update 參數的方向是不穩定的，但是**天下武功，唯快不破**，在別人出一拳的時候，它就已經出了 100 拳了，所以它是比較強的
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/keras-step3.png" width="60%;" /></center>
 #### Mini-batch
 
-这里有一个秘密，就是我们在做deep learning的gradient descent的时候，并不会真的去minimize total loss，那我们做的是什么呢？我们会把Training data分成一个一个的batch，比如说你的Training data一共有1w张image，每次random选100张image作为一个batch(我的理解是，先将原来的image分布随机打乱，然后再按顺序每次挑出batch_size张image组成一个batch，这样才能保证所有的data都有被用到，且不同的batch里不会出现重复的data)
+這裡有一個秘密，就是我們在做 deep learning 的 gradient descent 的時候，並不會真的去 minimize total loss，那我們做的是什麼呢？我們會把 Training data 分成一個一個的 batch，比如說你的 Training data 一共有 1w 張 image，每次 random 選 100 張 image 作為一個 batch(我的理解是，先將原來的 image 分布隨機打亂，然後再按順序每次挑出 batch_size 張 image 組成一個 batch，這樣才能保證所有的 data 都有被用到，且不同的 batch 里不會出現重復的 data)
 
-- 像gradient descent一样，先随机initialize network的参数
+- 像 gradient descent 一樣，先隨機 initialize network 的參數
 
-- 选第一个batch出来，然后计算这个batch里面的所有element的total loss，$L'=l^1+l^{31}+...$，接下来根据$L'$去update参数，也就是计算$L'$对所有参数的偏微分，然后update参数
+- 選第一個 batch 出來，然後計算這個 batch 裡面的所有 element 的 total loss，$L'=l^1+l^{31}+...$，接下來根據$L'$去 update 參數，也就是計算$L'$對所有參數的偏微分，然後 update 參數
 
-    注意：不是全部data的total loss
+  注意：不是全部 data 的 total loss
 
-- 再选择第二个batch，现在这个batch的total loss是$L''=l^2+l^{16}+...$，接下来计算$L''$对所有参数的偏微分，然后update参数
+- 再選擇第二個 batch，現在這個 batch 的 total loss 是$L''=l^2+l^{16}+...$，接下來計算$L''$對所有參數的偏微分，然後 update 參數
 
-- 反复做这个process，直到把所有的batch通通选过一次，所以假设你有100个batch的话，你就把这个参数update 100次，把所有batch看过一次，就叫做一个epoch
+- 反復做這個 process，直到把所有的 batch 通通選過一次，所以假設你有 100 個 batch 的話，你就把這個參數 update 100 次，把所有 batch 看過一次，就叫做一個 epoch
 
-- 重复epoch的过程，所以你在train network的时候，你会需要好几十个epoch，而不是只有一个epoch
+- 重復 epoch 的過程，所以你在 train network 的時候，你會需要好幾十個 epoch，而不是只有一個 epoch
 
-整个训练的过程类似于stochastic gradient descent，不是将所有数据读完才开始做gradient descent的，而是拿到一部分数据就做一次gradient descent
+整個訓練的過程類似於 stochastic gradient descent，不是將所有數據讀完才開始做 gradient descent 的，而是拿到一部分數據就做一次 gradient descent
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/mini-batch.png" width="50%;" /></center>
 #### Batch size and Training Speed
 
-##### batch size太小会导致不稳定，速度上也没有优势
+##### batch size 太小會導致不穩定，速度上也沒有優勢
 
-前面已经提到了，stochastic gradient descent速度快，表现好，既然如此，为什么我们还要用Mini-batch呢？这就涉及到了一些实际操作上的问题，让我们必须去用Mini-batch
+前面已經提到了，stochastic gradient descent 速度快，表現好，既然如此，為什麼我們還要用 Mini-batch 呢？這就涉及到了一些實際操作上的問題，讓我們必須去用 Mini-batch
 
-举例来说，我们现在有50000个examples，如果我们把batch size设置为1，就是stochastic gradient descent，那在一个epoch里面，就会update 50000次参数；如果我们把batch size设置为10，在一个epoch里面，就会update 5000次参数
+舉例來說，我們現在有 50000 個 examples，如果我們把 batch size 設置為 1，就是 stochastic gradient descent，那在一個 epoch 裡面，就會 update 50000 次參數；如果我們把 batch size 設置為 10，在一個 epoch 裡面，就會 update 5000 次參數
 
-看上去stochastic gradient descent的速度貌似是比较快的，它一个epoch更新参数的次数比batch size等于10的情况下要快了10倍，但是！我们好像忽略了一个问题，我们之前一直都是下意识地认为不同batch size的情况下运行一个epoch的时间应该是相等的，然后我们才去比较每个epoch所能够update参数的次数，可是它们又怎么可能会是相等的呢？
+看上去 stochastic gradient descent 的速度貌似是比較快的，它一個 epoch 更新參數的次數比 batch size 等於 10 的情況下要快了 10 倍，但是！我們好像忽略了一個問題，我們之前一直都是下意識地認為不同 batch size 的情況下運行一個 epoch 的時間應該是相等的，然後我們才去比較每個 epoch 所能夠 update 參數的次數，可是它們又怎麼可能會是相等的呢？
 
-实际上，当你batch size设置不一样的时候，一个epoch需要的时间是不一样的，以GTX 980为例，下图是对总数为50000笔的Training data设置不同的batch size时，每一个epoch所需要花费的时间
+實際上，當你 batch size 設置不一樣的時候，一個 epoch 需要的時間是不一樣的，以 GTX 980 為例，下圖是對總數為 50000 筆的 Training data 設置不同的 batch size 時，每一個 epoch 所需要花費的時間
 
-- case1：如果batch size设为1，也就是stochastic gradient descent，一个epoch要花费166秒，接近3分钟
+- case1：如果 batch size 設為 1，也就是 stochastic gradient descent，一個 epoch 要花費 166 秒，接近 3 分鐘
 
-- case2：如果batch size设为10，那一个epoch是17秒
+- case2：如果 batch size 設為 10，那一個 epoch 是 17 秒
 
-也就是说，当stochastic gradient descent算了一个epoch的时候，batch size为10的情况已经算了近10个epoch了；所以case1跑一个epoch，做了50000次update参数的同时，case2跑了十个epoch，做了近5000\*10=50000次update参数；你会发现batch size设1和设10，update参数的次数几乎是一样的
+也就是說，當 stochastic gradient descent 算了一個 epoch 的時候，batch size 為 10 的情況已經算了近 10 個 epoch 了；所以 case1 跑一個 epoch，做了 50000 次 update 參數的同時，case2 跑了十個 epoch，做了近 5000\*10=50000 次 update 參數；你會發現 batch size 設 1 和設 10，update 參數的次數幾乎是一樣的
 
-如果不同batch size的情况，update参数的次数几乎是一样的，你其实会想要选batch size更大的情况，就像在本例中，相较于batch size=1，你会更倾向于选batch size=10，因为batch size=10的时候，是会比较稳定的，因为**由更大的数据集计算的梯度能够更好的代表样本总体，从而更准确的朝向极值所在的方向**
+如果不同 batch size 的情況，update 參數的次數幾乎是一樣的，你其實會想要選 batch size 更大的情況，就像在本例中，相較於 batch size=1，你會更傾向於選 batch size=10，因為 batch size=10 的時候，是會比較穩定的，因為**由更大的數據集計算的梯度能夠更好的代表樣本總體，從而更準確的朝向極值所在的方向**
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/batch-size-speed.png" width="50%;" /></center>
-我们之前把gradient descent换成stochastic gradient descent，是因为后者速度比较快，update次数比较多，可是现在如果你用stochastic gradient descent并没有见得有多快，那你为什么不选一个update次数差不多，又比较稳定的方法呢？
+我們之前把gradient descent換成stochastic gradient descent，是因為後者速度比較快，update次數比較多，可是現在如果你用stochastic gradient descent並沒有見得有多快，那你為什麼不選一個update次數差不多，又比較穩定的方法呢？
 
-##### batch size会受到GPU平行加速的限制，太大可能导致在train的时候卡住
+##### batch size 會受到 GPU 平行加速的限制，太大可能導致在 train 的時候卡住
 
-上面例子的现象产生的原因是我们用了GPU，用了平行运算，所以batch size=10的时候，这10个example其实是同时运算的，所以你在一个batch里算10个example的时间跟算1个example的时间几乎可以是一样的
+上面例子的現象產生的原因是我們用了 GPU，用了平行運算，所以 batch size=10 的時候，這 10 個 example 其實是同時運算的，所以你在一個 batch 里算 10 個 example 的時間跟算 1 個 example 的時間幾乎可以是一樣的
 
-那你可能会问，既然batch size越大，它会越稳定，而且还可以平行运算，那为什么不把batch size变得超级大呢？这里有两个claim(声明)：
+那你可能會問，既然 batch size 越大，它會越穩定，而且還可以平行運算，那為什麼不把 batch size 變得超級大呢？這裡有兩個 claim(聲明)：
 
-- 第一个claim就是，如果你把batch size开到很大，最终GPU会没有办法进行平行运算，它终究是有自己的极限的，也就是说它同时考虑10个example和1个example的时间是一样的，但当它考虑10000个example的时候，时间就不可能还是跟一个example一样，因为batch size考虑到**硬件限制**，是没有办法无穷尽地增长的
+- 第一個 claim 就是，如果你把 batch size 開到很大，最終 GPU 會沒有辦法進行平行運算，它終究是有自己的極限的，也就是說它同時考慮 10 個 example 和 1 個 example 的時間是一樣的，但當它考慮 10000 個 example 的時候，時間就不可能還是跟一個 example 一樣，因為 batch size 考慮到**硬件限制**，是沒有辦法無窮盡地增長的
 
-- 第二个claim是说，如果把batch size设的很大，在train gradient descent的时候，可能跑两下你的network就卡住了，就陷到saddle point或者local minima里面去了
+- 第二個 claim 是說，如果把 batch size 設的很大，在 train gradient descent 的時候，可能跑兩下你的 network 就卡住了，就陷到 saddle point 或者 local minima 裡面去了
 
-    因为在neural network的error surface上面，如果你把loss的图像可视化出来的话，它并不是一个convex的optimization problem，不会像理想中那么平滑，实际上它会有很多的坑坑洞洞
+  因為在 neural network 的 error surface 上面，如果你把 loss 的圖像可視化出來的話，它並不是一個 convex 的 optimization problem，不會像理想中那麼平滑，實際上它會有很多的坑坑洞洞
 
-    如果你用的batch size很大，甚至是Full batch，那你走过的路径会是比较平滑连续的，可能这一条平滑的曲线在走向最低点的过程中就会在坑洞或是缓坡上卡住了；但是，如果你的batch size没有那么大，意味着你走的路线没有那么的平滑，有些步伐走的是**随机性**的，路径是会有一些曲折和波动的
+  如果你用的 batch size 很大，甚至是 Full batch，那你走過的路徑會是比較平滑連續的，可能這一條平滑的曲線在走向最低點的過程中就會在坑洞或是緩坡上卡住了；但是，如果你的 batch size 沒有那麼大，意味著你走的路線沒有那麼的平滑，有些步伐走的是**隨機性**的，路徑是會有一些曲折和波動的
 
-    可能在你走的过程中，它的曲折和波动刚好使得你“绕过”了那些saddle point或是local minima的地方；或者当你陷入不是很深的local minima或者没有遇到特别麻烦的saddle point的时候，它步伐的随机性就可以帮你跳出这个gradient接近于0的区域，于是你更有可能真的走向global minima的地方
+  可能在你走的過程中，它的曲折和波動剛好使得你「繞過」了那些 saddle point 或是 local minima 的地方；或者當你陷入不是很深的 local minima 或者沒有遇到特別麻煩的 saddle point 的時候，它步伐的隨機性就可以幫你跳出這個 gradient 接近於 0 的區域，於是你更有可能真的走向 global minima 的地方
 
-    而对于Full batch的情况，它的路径是没有随机性的，是稳定朝着目标下降的，因此在这个时候去train neural network其实是有问题的，可能update两三次参数就会卡住，所以mini batch是有必要的
+  而對於 Full batch 的情況，它的路徑是沒有隨機性的，是穩定朝著目標下降的，因此在這個時候去 train neural network 其實是有問題的，可能 update 兩三次參數就會卡住，所以 mini batch 是有必要的
 
-    下面是我手画的图例和注释：
+  下面是我手畫的圖例和注釋：
 
     <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/batch-size.jpg" width="70%;" /></center>
 
-##### 不同batch size在梯度下降上的表现
+##### 不同 batch size 在梯度下降上的表現
 
-如下图，左边是full batch(拿全部的Training data做一个batch)的梯度下降效果，可以看到每一次迭代成本函数都呈现下降趋势，这是好的现象，说明我们w和b的设定一直再减少误差， 这样一直迭代下去我们就可以找到最优解；右边是mini batch的梯度下降效果，可以看到它是上下波动的，成本函数的值有时高有时低，但总体还是呈现下降的趋势， 这个也是正常的，因为我们每一次梯度下降都是在min batch上跑的而不是在整个数据集上， 数据的差异可能会导致这样的波动(可能某段数据效果特别好，某段数据效果不好)，但没关系，因为它整体是呈下降趋势的
+如下圖，左邊是 full batch(拿全部的 Training data 做一個 batch)的梯度下降效果，可以看到每一次迭代成本函數都呈現下降趨勢，這是好的現象，說明我們 w 和 b 的設定一直再減少誤差， 這樣一直迭代下去我們就可以找到最優解；右邊是 mini batch 的梯度下降效果，可以看到它是上下波動的，成本函數的值有時高有時低，但總體還是呈現下降的趨勢， 這個也是正常的，因為我們每一次梯度下降都是在 min batch 上跑的而不是在整個數據集上， 數據的差異可能會導致這樣的波動(可能某段數據效果特別好，某段數據效果不好)，但沒關係，因為它整體是呈下降趨勢的
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/keras-gd1.png" width="50%;" /></center>
-把下面的图看做是梯度下降空间：蓝色部分是full batch而紫色部分是mini batch，就像上面所说的mini batch不是每次迭代损失函数都会减少，所以看上去好像走了很多弯路，不过整体还是朝着最优解迭代的，而且由于mini batch一个epoch就走了5000步(5000次梯度下降)，而full batch一个epoch只有一步，所以虽然mini batch走了弯路但还是会快很多
+把下面的圖看做是梯度下降空間：藍色部分是full batch而紫色部分是mini batch，就像上面所說的mini batch不是每次迭代損失函數都會減少，所以看上去好像走了很多彎路，不過整體還是朝著最優解迭代的，而且由於mini batch一個epoch就走了5000步(5000次梯度下降)，而full batch一個epoch只有一步，所以雖然mini batch走了彎路但還是會快很多
 
-而且，就像之前提到的那样，mini batch在update的过程中，步伐具有随机性，因此紫色的路径可以在一定程度上绕过或跳出saddle point、local minima这些gradient趋近于0的地方；而蓝色的路径因为缺乏随机性，只能按照既定的方式朝着目标前进，很有可能就在中途被卡住，永远也跳不出来了
+而且，就像之前提到的那樣，mini batch 在 update 的過程中，步伐具有隨機性，因此紫色的路徑可以在一定程度上繞過或跳出 saddle point、local minima 這些 gradient 趨近於 0 的地方；而藍色的路徑因為缺乏隨機性，只能按照既定的方式朝著目標前進，很有可能就在中途被卡住，永遠也跳不出來了
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/keras-gd2.png" width="40%;" /></center>
-当然，就像之前讨论的一样，如果batch size太小，会造成速度不仅没有加快反而会导致下降的曲线更加不稳定的情况产生
+當然，就像之前討論的一樣，如果batch size太小，會造成速度不僅沒有加快反而會導致下降的曲線更加不穩定的情況產生
 
-==**因此batch size既不能太大，因为它会受到硬件GPU平行加速的限制，导致update次数过于缓慢，并且由于缺少随机性而很容易在梯度下降的过程中卡在saddle point或是local minima的地方(极端情况是Full batch)；而且batch size也不能太小，因为它会导致速度优势不明显的情况下，梯度下降曲线过于不稳定，算法可能永远也不会收敛(极端情况是Stochastic gradient descent)**==
+==**因此 batch size 既不能太大，因為它會受到硬件 GPU 平行加速的限制，導致 update 次數過於緩慢，並且由於缺少隨機性而很容易在梯度下降的過程中卡在 saddle point 或是 local minima 的地方(極端情況是 Full batch)；而且 batch size 也不能太小，因為它會導致速度優勢不明顯的情況下，梯度下降曲線過於不穩定，算法可能永遠也不會收斂(極端情況是 Stochastic gradient descent)**==
 
-##### GPU是如何平行加速的
+##### GPU 是如何平行加速的
 
-整个network，不管是Forward pass还是Backward pass，都可以看做是一连串的矩阵运算的结果
+整個 network，不管是 Forward pass 還是 Backward pass，都可以看做是一連串的矩陣運算的結果
 
-那今天我们就可以比较batch size等于1(stochastic gradient descent)和10(mini batch)的差别
+那今天我們就可以比較 batch size 等於 1(stochastic gradient descent)和 10(mini batch)的差別
 
-如下图所示，stochastic gradient descent就是对每一个input x进行单独运算；而mini batch，则是把同一个batch里面的input全部集合起来，假设现在我们的batch size是2，那mini batch每一次运算的input就是把黄色的vector和绿色的vector拼接起来变成一个matrix，再把这个matrix乘上$w_1$，你就可以直接得到$z^1$和$z^2$
+如下圖所示，stochastic gradient descent 就是對每一個 input x 進行單獨運算；而 mini batch，則是把同一個 batch 裡面的 input 全部集合起來，假設現在我們的 batch size 是 2，那 mini batch 每一次運算的 input 就是把黃色的 vector 和綠色的 vector 拼接起來變成一個 matrix，再把這個 matrix 乘上$w_1$，你就可以直接得到$z^1$和$z^2$
 
-这两件事在理论上运算量是一样多的，但是在实际操作上，对GPU来说，在矩阵里面相乘的每一个element都是可以平行运算的，所以图中stochastic gradient descent运算的时间反而会变成下面mini batch使用GPU运算速度的两倍，这就是为什么我们要使用mini batch的原因
+這兩件事在理論上運算量是一樣多的，但是在實際操作上，對 GPU 來說，在矩陣裡面相乘的每一個 element 都是可以平行運算的，所以圖中 stochastic gradient descent 運算的時間反而會變成下面 mini batch 使用 GPU 運算速度的兩倍，這就是為什麼我們要使用 mini batch 的原因
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/matrix-speed.png" width="50%;" /></center>
-所以，如果你买了GPU，但是没有使用mini batch的话，其实就不会有多少加速的效果
+所以，如果你買了GPU，但是沒有使用mini batch的話，其實就不會有多少加速的效果
 
 #### Save and Load Models
 
-Keras是可以帮你save和load model的，你可以把train好的model存起来，以后再用另外一个程式读出来，它也可以帮你做testing
+Keras 是可以幫你 save 和 load model 的，你可以把 train 好的 model 存起來，以後再用另外一個程式讀出來，它也可以幫你做 testing
 
-那怎么用neural network去testing呢？有两种case：
+那怎麼用 neural network 去 testing 呢？有兩種 case：
 
-- case 1是**evaluation**，比如今天我有一组testing set，testing set的答案也是已知的，那Keras就可以帮你算现在的正确率有多少，这个`model.evaluate`函数有两个input，就是testing的image和testing的label
+- case 1 是**evaluation**，比如今天我有一組 testing set，testing set 的答案也是已知的，那 Keras 就可以幫你算現在的正確率有多少，這個`model.evaluate`函數有兩個 input，就是 testing 的 image 和 testing 的 label
 
-    ~~~python
-    score = model.evaluate(x_test,y_test)
-    print('Total loss on Testing Set:',score[0])
-    print('Accuracy of Testing Set:',score[1])
-    ~~~
+  ```python
+  score = model.evaluate(x_test,y_test)
+  print('Total loss on Testing Set:',score[0])
+  print('Accuracy of Testing Set:',score[1])
+  ```
 
-- case 2是**prediction**，这个时候`model.predict`函数的input只有image data而没有任何的label data，output就直接是分类的结果
+- case 2 是**prediction**，這個時候`model.predict`函數的 input 只有 image data 而沒有任何的 label data，output 就直接是分類的結果
 
-    ~~~python
-    result = model.predict(x_test)
-    ~~~
+  ```python
+  result = model.predict(x_test)
+  ```
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/save-load-model.png" width="60%;" /></center>
-#### Appendix：手写数字识别完整代码(Keras2.0)
+#### Appendix：手寫數字識別完整代碼(Keras2.0)
 
 ##### code
 
-~~~python
+```python
 import numpy as np
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
@@ -246,7 +246,7 @@ from keras.utils import np_utils
 from keras.datasets import mnist
 
 # categorical_crossentropy
-def load_data():  
+def load_data():
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
     number = 10000
     x_train = x_train[0:number]
@@ -289,11 +289,11 @@ if __name__ == '__main__':
     result = model.evaluate(x_test, y_test)
     print('Test Acc:', result[1])
 
-~~~
+```
 
 ##### result
 
-~~~python
+```python
 Epoch 1/20
 10000/10000 [==============================] - 2s 214us/step - loss: 1.1724 - acc: 0.6558
 Epoch 2/20
@@ -336,8 +336,8 @@ Epoch 20/20
 10000/10000 [==============================] - 1s 134us/step - loss: 0.0398 - acc: 0.9906
 10000/10000 [==============================] - 1s 79us/step
 Test Acc: 0.9439
-~~~
+```
 
-可以发现每次做完一个epoch的update后，手写数字识别的准确率都有上升，最终训练好的model识别准确率等于94.39%
+可以發現每次做完一個 epoch 的 update 後，手寫數字識別的準確率都有上升，最終訓練好的 model 識別準確率等於 94.39%
 
-注：把activation function从sigmoid换成relu可以使识别准确率更高，这里不再重复试验
+注：把 activation function 從 sigmoid 換成 relu 可以使識別準確率更高，這裡不再重復試驗

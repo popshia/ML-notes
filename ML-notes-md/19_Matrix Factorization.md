@@ -1,79 +1,84 @@
 # Matrix Factorization
 
-> 本文将通过一个详细的例子分析矩阵分解思想及其在推荐系统上的应用
+> 本文將通過一個詳細的例子分析矩陣分解思想及其在推薦系統上的應用
 
 #### Introduction
 
-接下来介绍**矩阵分解**的思想：有时候存在两种object，它们之间会受到某种共同**潜在因素**(latent factor)的操控，如果我们找出这些潜在因素，就可以对用户的行为进行预测，这也是**推荐系统**常用的方法之一
+接下來介紹**矩陣分解**的思想：有時候存在兩種 object，它們之間會受到某種共同**潛在因素**(latent factor)的操控，如果我們找出這些潛在因素，就可以對用戶的行為進行預測，這也是**推薦系統**常用的方法之一
 
-假设我们现在去调查每个人购买的公仔数目，ABCDE代表5个人，每个人或者每个公仔实际上都是有着傲娇的属性或天然呆的属性
+假設我們現在去調查每個人購買的公仔數目，ABCDE 代表 5 個人，每個人或者每個公仔實際上都是有著傲嬌的屬性或天然呆的屬性
 
-我们可以用vector去描述人和公仔的属性，如果某个人的属性和某个公仔的属性是match的，即他们背后的vector很像(内积值很大)，这个人就会偏向于拥有更多这种类型的公仔
+我們可以用 vector 去描述人和公仔的屬性，如果某個人的屬性和某個公仔的屬性是 match 的，即他們背後的 vector 很像(內積值很大)，這個人就會偏向於擁有更多這種類型的公仔
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/mf.png" width="60%"/></center>
 
 #### matrix expression
 
-但是，我们没有办法直接观察某个人背后这些潜在的属性，也不会有人在意一个肥宅心里想的是什么，我们同样也没有办法直接得到动漫人物背后的属性；我们目前有的，只是动漫人物和人之间的关系，即每个人已购买的公仔数目，我们要通过这个关系去推测出动漫人物与人背后的潜在因素(latent factor)
+但是，我們沒有辦法直接觀察某個人背後這些潛在的屬性，也不會有人在意一個肥宅心裡想的是什麼，我們同樣也沒有辦法直接得到動漫人物背後的屬性；我們目前有的，只是動漫人物和人之間的關係，即每個人已購買的公仔數目，我們要通過這個關係去推測出動漫人物與人背後的潛在因素(latent factor)
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/mf2.png" width="60%"/></center>
 
-我们可以把每个人的属性用vector $r^A$、$r^B$、$r^C$、$r^D$、$r^E$来表示，而动漫人物的属性则用vector $r^1$、$r^2$、$r^3$、$r^4$来表示，购买的公仔数目可以被看成是matrix $X$，对$X$来说，行数为人数，列数为动漫角色的数目
+我們可以把每個人的屬性用 vector $r^A$、$r^B$、$r^C$、$r^D$、$r^E$來表示，而動漫人物的屬性則用 vector $r^1$、$r^2$、$r^3$、$r^4$來表示，購買的公仔數目可以被看成是 matrix $X$，對$X$來說，行數為人數，列數為動漫角色的數目
 
-做一个假设：matrix $X$里的每个element，都是属于人的vector和属于动漫角色的vector的内积
+做一個假設：matrix $X$里的每個 element，都是屬於人的 vector 和屬於動漫角色的 vector 的內積
 
-比如，$r^A\cdot r^1≈5$，表示$r^A$和$r^1$的属性比较贴近
+比如，$r^A\cdot r^1≈5$，表示$r^A$和$r^1$的屬性比較貼近
 
-接下来就用下图所示的矩阵相乘的方式来表示这样的关系，其中$K$为latent factor的数量，这是未知的，需要你自己去调整选择
+接下來就用下圖所示的矩陣相乘的方式來表示這樣的關係，其中$K$為 latent factor 的數量，這是未知的，需要你自己去調整選擇
 
-我们要找一组$r^A$\~$r^E$和$r^1$\~$r^4$，使得右侧两个矩阵相乘的结果与左侧的matrix $X$越接近越好，可以使用SVD的方法求解
+我們要找一組$r^A$\~$r^E$和$r^1$\~$r^4$，使得右側兩個矩陣相乘的結果與左側的 matrix $X$越接近越好，可以使用 SVD 的方法求解
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/mf3.png" width="60%"/></center>
 
 #### prediction
 
-但有时候，部分的information可能是会missing的，这时候就难以用SVD精确描述，但我们可以使用梯度下降的方法求解，loss function如下：
+但有時候，部分的 information 可能是會 missing 的，這時候就難以用 SVD 精確描述，但我們可以使用梯度下降的方法求解，loss function 如下：
+
 $$
 L=\sum\limits_{(i,j)}(r^i\cdot r^j-n_{ij})^2
 $$
-其中$r^i$值的是人背后的latent factor，$r^j$指的是动漫角色背后的latent factor，我们要让这两个vector的内积与实际购买该公仔的数量$n_{ij}$越接近越好，这个方法的关键之处在于，计算上式时，可以跳过missing的数据，最终通过gradient descent求得$r^i$和$r^j$的值
+
+其中$r^i$值的是人背後的 latent factor，$r^j$指的是動漫角色背後的 latent factor，我們要讓這兩個 vector 的內積與實際購買該公仔的數量$n_{ij}$越接近越好，這個方法的關鍵之處在於，計算上式時，可以跳過 missing 的數據，最終通過 gradient descent 求得$r^i$和$r^j$的值
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/mf4.png" width="60%"/></center>
 
-假设latent factor的数目等于2，则人的属性$r^i$和动漫角色的属性$r^j$都是2维的vector，这里实际进行计算后，把属性中较大值标注出来，可以发现：
+假設 latent factor 的數目等於 2，則人的屬性$r^i$和動漫角色的屬性$r^j$都是 2 維的 vector，這裡實際進行計算後，把屬性中較大值標注出來，可以發現：
 
-- 人：A、B属于同一组属性，C、D、E属于同一组属性
-- 动漫角色：1、2属于同一组属性，3、4属于同一组属性
+- 人：A、B 屬於同一組屬性，C、D、E 屬於同一組屬性
+- 動漫角色：1、2 屬於同一組屬性，3、4 屬於同一組屬性
 
-- 结合动漫角色，可以分析出动漫角色的第一个维度是天然呆属性，第二个维度是傲娇属性
+- 結合動漫角色，可以分析出動漫角色的第一個維度是天然呆屬性，第二個維度是傲嬌屬性
 
-- 接下来就可以预测未知的值，只需要将人和动漫角色的vector做内积即可
+- 接下來就可以預測未知的值，只需要將人和動漫角色的 vector 做內積即可
 
-这也是**推荐系统的常用方法**
+這也是**推薦系統的常用方法**
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/mf5.png" width="60%"/></center>
 
 #### more about matrix factorization
 
-实际上除了人和动漫角色的属性之外，可能还存在其他因素操控购买数量这一数值，因此我们可以将式子更精确地改写为：
+實際上除了人和動漫角色的屬性之外，可能還存在其他因素操控購買數量這一數值，因此我們可以將式子更精確地改寫為：
+
 $$
 r^A\cdot r^1+b_A+b_1≈5
 $$
-其中$b_A$表示A这个人本身有多喜欢买公仔，$b_1$则表示这个动漫角色本身有多让人想要购买，这些内容是跟属性vector无关的，此时loss function被改写为：
+
+其中$b_A$表示 A 這個人本身有多喜歡買公仔，$b_1$則表示這個動漫角色本身有多讓人想要購買，這些內容是跟屬性 vector 無關的，此時 loss function 被改寫為：
+
 $$
 L=\sum\limits_{(i,j)}(r^i\cdot r^j+b_i+b_j-n_{ij})^2
 $$
-当然你也可以加上一些regularization去对结果做约束
 
-有关Matrix Factorization和推荐系统更多内容的介绍，可以参考paper(公众号回复“推荐系统”获取pdf )：*Matrix Factorization Techniques For Recommender Systems*
+當然你也可以加上一些 regularization 去對結果做約束
+
+有關 Matrix Factorization 和推薦系統更多內容的介紹，可以參考 paper(公眾號回復「推薦系統」獲取 pdf )：_Matrix Factorization Techniques For Recommender Systems_
 
 #### for Topic Analysis
 
-如果把matrix factorization的方法用在topic analysis上，就叫做LSA(Latent semantic analysis)，潜在语义分析
+如果把 matrix factorization 的方法用在 topic analysis 上，就叫做 LSA(Latent semantic analysis)，潛在語義分析
 
-我们只需要把动漫人物换成文章，人换成词汇，表中的值从购买数量换成词频即可，我们可以用词汇的重要性给词频加权，在各种文章中出现次数越多的词汇越不重要，出现次数越少则越重要
+我們只需要把動漫人物換成文章，人換成詞彙，表中的值從購買數量換成詞頻即可，我們可以用詞彙的重要性給詞頻加權，在各種文章中出現次數越多的詞彙越不重要，出現次數越少則越重要
 
-这个场景下找出的latent factor可能会是主题(topic)，比如某个词汇或某个文档有多少比例是偏向于财经主题、政治主题...
+這個場景下找出的 latent factor 可能會是主題(topic)，比如某個詞彙或某個文檔有多少比例是偏向於財經主題、政治主題...
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/mf6.png" width="60%"/></center>
-

@@ -1,240 +1,247 @@
 # Support Vector Machine
 
-支持向量机(SVM)有两个特点：SVM=铰链损失(Hinge Loss)+核技巧(Kernel Method)
+支持向量機(SVM)有兩個特點：SVM=鉸鏈損失(Hinge Loss)+核技巧(Kernel Method)
 
-注：建议先看这篇[博客](https://juejin.im/post/5d273c34e51d45599e019e4d)了解SVM基础知识后再看本文的分析
+注：建議先看這篇[博客](https://juejin.im/post/5d273c34e51d45599e019e4d)瞭解 SVM 基礎知識後再看本文的分析
 
 #### Hinge Loss
 
 ##### Binary Classification
 
-先回顾一下二元分类的做法，为了方便后续推导，这里定义data的标签为-1和+1
+先回顧一下二元分類的做法，為了方便後續推導，這裡定義 data 的標籤為-1 和+1
 
-- 当$f(x)>0$时，$g(x)=1$，表示属于第一类别；当$f(x)<0$时，$g(x)=-1$，表示属于第二类别
+- 當$f(x)>0$時，$g(x)=1$，表示屬於第一類別；當$f(x)<0$時，$g(x)=-1$，表示屬於第二類別
 
-- 原本用$\sum \delta(g(x^n)\ne \hat y^n)$，不匹配的样本点个数，来描述loss function，其中$\delta=1$表示$x$与$\hat y$相匹配，反之$\delta=0$，但这个式子不可微分，无法使用梯度下降法更新参数
+- 原本用$\sum \delta(g(x^n)\ne \hat y^n)$，不匹配的樣本點個數，來描述 loss function，其中$\delta=1$表示$x$與$\hat y$相匹配，反之$\delta=0$，但這個式子不可微分，無法使用梯度下降法更新參數
 
-    因此使用近似的可微分的$l(f(x^n),\hat y^n)$来表示损失函数
+  因此使用近似的可微分的$l(f(x^n),\hat y^n)$來表示損失函數
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/svm-bc.png" width="60%"/></center>
 
-下图中，横坐标为$\hat y^n f(x)$，我们希望横坐标越大越好：
+下圖中，橫坐標為$\hat y^n f(x)$，我們希望橫坐標越大越好：
 
-- 当$\hat y^n>0$时，希望$f(x)$越正越好
-- 当$\hat y^n<0$时，希望$f(x)$越负越好
+- 當$\hat y^n>0$時，希望$f(x)$越正越好
+- 當$\hat y^n<0$時，希望$f(x)$越負越好
 
-纵坐标是loss，原则上，当横坐标$\hat y^n f(x)$越大的时候，纵坐标loss要越小，横坐标越小，纵坐标loss要越大
+縱坐標是 loss，原則上，當橫坐標$\hat y^n f(x)$越大的時候，縱坐標 loss 要越小，橫坐標越小，縱坐標 loss 要越大
 
 ##### ideal loss
 
-在$L(f)=\sum\limits_n \delta(g(x^n)\ne \hat y^n)$的理想情况下，如果$\hat y^n f(x)>0$，则loss=0，如果$\hat y^n f(x)<0$，则loss=1，如下图中加粗的黑线所示，可以看出该曲线是无法微分的，因此我们要另一条近似的曲线来替代该损失函数
+在$L(f)=\sum\limits_n \delta(g(x^n)\ne \hat y^n)$的理想情況下，如果$\hat y^n f(x)>0$，則 loss=0，如果$\hat y^n f(x)<0$，則 loss=1，如下圖中加粗的黑線所示，可以看出該曲線是無法微分的，因此我們要另一條近似的曲線來替代該損失函數
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/svm-bc2.png" width="60%"/></center>
 
 ##### square loss
 
-下图中的红色曲线代表了square loss的损失函数：$l(f(x^n),\hat y^n)=(\hat y^n f(x^n)-1)^2$
+下圖中的紅色曲線代表了 square loss 的損失函數：$l(f(x^n),\hat y^n)=(\hat y^n f(x^n)-1)^2$
 
-- 当$\hat y^n=1$时，$f(x)$与1越接近越好，此时损失函数化简为$(f(x^n)-1)^2$
-- 当$\hat y^n=-1$时，$f(x)$与-1越接近越好，此时损失函数化简为$(f(x^n)+1)^2$
-- 但实际上整条曲线是不合理的，它会使得$\hat y^n f(x)$很大的时候有一个更大的loss
+- 當$\hat y^n=1$時，$f(x)$與 1 越接近越好，此時損失函數化簡為$(f(x^n)-1)^2$
+- 當$\hat y^n=-1$時，$f(x)$與-1 越接近越好，此時損失函數化簡為$(f(x^n)+1)^2$
+- 但實際上整條曲線是不合理的，它會使得$\hat y^n f(x)$很大的時候有一個更大的 loss
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/svm-bc3.png" width="60%"/></center>
 
 ##### sigmoid+square loss
 
-此外蓝线代表sigmoid+square loss的损失函数：$l(f(x^n),\hat y^n)=(\sigma(\hat y^n f(x^n))-1)^2$
+此外藍線代表 sigmoid+square loss 的損失函數：$l(f(x^n),\hat y^n)=(\sigma(\hat y^n f(x^n))-1)^2$
 
-- 当$\hat y^n=1$时，$\sigma (f(x))$与1越接近越好，此时损失函数化简为$(\sigma(f(x))-1)^2$
-- 当$\hat y^n=-1$时，$\sigma (f(x))$与0越接近越好，此时损失函数化简为$(\sigma(f(x)))^2$
-- 在逻辑回归的时候实践过，一般square loss的方法表现并不好，而是用cross entropy会更好
+- 當$\hat y^n=1$時，$\sigma (f(x))$與 1 越接近越好，此時損失函數化簡為$(\sigma(f(x))-1)^2$
+- 當$\hat y^n=-1$時，$\sigma (f(x))$與 0 越接近越好，此時損失函數化簡為$(\sigma(f(x)))^2$
+- 在邏輯回歸的時候實踐過，一般 square loss 的方法表現並不好，而是用 cross entropy 會更好
 
 ##### sigmoid+cross entropy
 
-绿线则是代表了sigmoid+cross entropy的损失函数：$l(f(x^n),\hat y^n)=ln(1+e^{-\hat y^n f(x)})$
+綠線則是代表了 sigmoid+cross entropy 的損失函數：$l(f(x^n),\hat y^n)=ln(1+e^{-\hat y^n f(x)})$
 
-- $\sigma (f(x))$代表了一个分布，而Ground Truth则是真实分布，这两个分布之间的交叉熵，就是我们要去minimize的loss
-- 当$\hat y^n f(x)$很大的时候，loss接近于0
-- 当$\hat y^n f(x)$很小的时候，loss特别大
-- 下图是把损失函数除以$ln2$的曲线，使之变成ideal loss的upper bound，且不会对损失函数本身产生影响
-- 我们虽然不能minimize理想的loss曲线，但我们可以minimize它的upper bound，从而起到最小化loss的效果
+- $\sigma (f(x))$代表了一個分布，而 Ground Truth 則是真實分布，這兩個分布之間的交叉熵，就是我們要去 minimize 的 loss
+- 當$\hat y^n f(x)$很大的時候，loss 接近於 0
+- 當$\hat y^n f(x)$很小的時候，loss 特別大
+- 下圖是把損失函數除以$ln2$的曲線，使之變成 ideal loss 的 upper bound，且不會對損失函數本身產生影響
+- 我們雖然不能 minimize 理想的 loss 曲線，但我們可以 minimize 它的 upper bound，從而起到最小化 loss 的效果
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/svm-bc4.png" width="60%"/></center>
 
 ##### cross entropy VS square error
 
-为什么cross entropy要比square error要来的有效呢？
+為什麼 cross entropy 要比 square error 要來的有效呢？
 
-- 我们期望在极端情况下，比如$\hat y^n$与$f(x)$非常不匹配导致横坐标非常负的时候，loss的梯度要很大，这样才能尽快地通过参数调整回到loss低的地方
+- 我們期望在極端情況下，比如$\hat y^n$與$f(x)$非常不匹配導致橫坐標非常負的時候，loss 的梯度要很大，這樣才能盡快地通過參數調整回到 loss 低的地方
 
-- 对sigmoid+square loss来说，当横坐标非常负的时候，loss的曲线反而是平缓的，此时去调整参数值对最终loss的影响其实并不大，它并不能很快地降低
+- 對 sigmoid+square loss 來說，當橫坐標非常負的時候，loss 的曲線反而是平緩的，此時去調整參數值對最終 loss 的影響其實並不大，它並不能很快地降低
 
-    形象来说就是，“没有回报，不想努力”
+  形象來說就是，「沒有回報，不想努力」
 
-- 而对cross entropy来说，当横坐标非常负的时候，loss的梯度很大，稍微调整参数就可以往loss小的地方走很大一段距离，这对训练是友好的
+- 而對 cross entropy 來說，當橫坐標非常負的時候，loss 的梯度很大，稍微調整參數就可以往 loss 小的地方走很大一段距離，這對訓練是友好的
 
-    形象来说就是，“努力可以有回报""
+  形象來說就是，「努力可以有回報""
 
 ##### Hinge Loss
 
-紫线代表了hinge loss的损失函数：$l(f(x^n),\hat y^n)=\max(0,1-\hat y^n f(x))$
+紫線代表了 hinge loss 的損失函數：$l(f(x^n),\hat y^n)=\max(0,1-\hat y^n f(x))$
 
-- 当$\hat y^n=1$，损失函数化简为$\max(0,1-f(x))$
-    - 此时只要$f(x)>1$，loss就会等于0
-- 当$\hat y^n=-1$，损失函数化简为$\max(0,1+f(x))$
-    - 此时只要$f(x)<-1$，loss就会等于0
-- 总结一下，如果label为1，则当$f(x)>1$，机器就认为loss为0；如果label为-1，则当$f(x)<-1$，机器就认为loss为0，因此该函数并不需要$f(x)$有一个很大的值
+- 當$\hat y^n=1$，損失函數化簡為$\max(0,1-f(x))$
+  - 此時只要$f(x)>1$，loss 就會等於 0
+- 當$\hat y^n=-1$，損失函數化簡為$\max(0,1+f(x))$
+  - 此時只要$f(x)<-1$，loss 就會等於 0
+- 總結一下，如果 label 為 1，則當$f(x)>1$，機器就認為 loss 為 0；如果 label 為-1，則當$f(x)<-1$，機器就認為 loss 為 0，因此該函數並不需要$f(x)$有一個很大的值
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/svm-bc5.png" width="60%"/></center>
 
-在紫线中，当$\hat y^n f(x)>1$，则已经实现目标，loss=0；当$\hat y^n f(x)>0$，表示已经得到了正确答案，但Hinge Loss认为这还不够，它需要你继续往1的地方前进
+在紫線中，當$\hat y^n f(x)>1$，則已經實現目標，loss=0；當$\hat y^n f(x)>0$，表示已經得到了正確答案，但 Hinge Loss 認為這還不夠，它需要你繼續往 1 的地方前進
 
-事实上，Hinge Loss也是Ideal loss的upper bound，但是当横坐标$\hat y^n f(x)>1$时，它与Ideal loss近乎是完全贴近的
+事實上，Hinge Loss 也是 Ideal loss 的 upper bound，但是當橫坐標$\hat y^n f(x)>1$時，它與 Ideal loss 近乎是完全貼近的
 
-比较Hinge loss和cross entropy，最大的区别在于他们对待已经做得好的样本点的态度，在横坐标$\hat y^n f(x)>1$的区间上，cross entropy还想要往更大的地方走，而Hinge loss则已经停下来了，就像一个的目标是”还想要更好“，另一个的目标是”及格就好“
+比較 Hinge loss 和 cross entropy，最大的區別在於他們對待已經做得好的樣本點的態度，在橫坐標$\hat y^n f(x)>1$的區間上，cross entropy 還想要往更大的地方走，而 Hinge loss 則已經停下來了，就像一個的目標是」還想要更好「，另一個的目標是」及格就好「
 
-在实作上，两者差距并不大，而Hinge loss的优势在于它不怕outlier，训练出来的结果鲁棒性(robust)比较强
+在實作上，兩者差距並不大，而 Hinge loss 的優勢在於它不怕 outlier，訓練出來的結果魯棒性(robust)比較強
 
 #### Linear SVM
 
 ##### model description
 
-在线性的SVM里，我们把$f(x)=\sum\limits_i w_i x_i+b=w^Tx$看做是向量$\left [\begin{matrix}w\\b \end{matrix}\right ]$和向量$\left [\begin{matrix}x\\1 \end{matrix}\right ]$的内积，也就是新的$w$和$x$，这么做可以把bias项省略掉
+在線性的 SVM 里，我們把$f(x)=\sum\limits_i w_i x_i+b=w^Tx$看做是向量$\left [\begin{matrix}w\\b \end{matrix}\right ]$和向量$\left [\begin{matrix}x\\1 \end{matrix}\right ]$的內積，也就是新的$w$和$x$，這麼做可以把 bias 項省略掉
 
-在损失函数中，我们通常会加上一个正规项，即$L(f)=\sum\limits_n l(f(x^n),\hat y^n)+\lambda ||w||_2$
+在損失函數中，我們通常會加上一個正規項，即$L(f)=\sum\limits_n l(f(x^n),\hat y^n)+\lambda ||w||_2$
 
-这是一个convex的损失函数，好处在于无论从哪个地方开始做梯度下降，最终得到的结果都会在最低处，曲线中一些折角处等不可微的点可以参考NN中relu、maxout等函数的微分处理
+這是一個 convex 的損失函數，好處在於無論從哪個地方開始做梯度下降，最終得到的結果都會在最低處，曲線中一些折角處等不可微的點可以參考 NN 中 relu、maxout 等函數的微分處理
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/svm-linear.png" width="60%"/></center>
 
-对比Logistic Regression和Linear SVM，两者唯一的区别就是损失函数不同，前者用的是cross entropy，后者用的是Hinge loss
+對比 Logistic Regression 和 Linear SVM，兩者唯一的區別就是損失函數不同，前者用的是 cross entropy，後者用的是 Hinge loss
 
-事实上，SVM并不局限于Linear，尽管Linear可以带来很多好的特质，但我们完全可以在一个Deep的神经网络中使用Hinge loss的损失函数，就成为了Deep SVM，其实Deep Learning、SVM这些方法背后的精神都是相通的，并没有那么大的界限
+事實上，SVM 並不局限於 Linear，儘管 Linear 可以帶來很多好的特質，但我們完全可以在一個 Deep 的神經網絡中使用 Hinge loss 的損失函數，就成為了 Deep SVM，其實 Deep Learning、SVM 這些方法背後的精神都是相通的，並沒有那麼大的界限
 
 ##### gradient descent
 
-尽管SVM大多不是用梯度下降训练的，但使用该方法训练确实是可行的，推导过程如下：
+儘管 SVM 大多不是用梯度下降訓練的，但使用該方法訓練確實是可行的，推導過程如下：
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/svm-gd.png" width="60%"/></center>
 
 ##### another formulation
 
-前面列出的式子可能与你平常看到的SVM不大一样，这里将其做一下简单的转换
+前面列出的式子可能與你平常看到的 SVM 不大一樣，這裡將其做一下簡單的轉換
 
-对$L(f)=\sum\limits_n \max(0,1-\hat y^n f(x))+\lambda ||w||_2$，用$L(f)=\sum\limits_n \epsilon^n+\lambda ||w||_2$来表示
+對$L(f)=\sum\limits_n \max(0,1-\hat y^n f(x))+\lambda ||w||_2$，用$L(f)=\sum\limits_n \epsilon^n+\lambda ||w||_2$來表示
 
 其中$\epsilon^n=\max(0,1-\hat y^n f(x))$
 
-对$\epsilon^n\geq0$、$\epsilon^n\geq1-\hat y^n f(x)$来说，它与上式原本是不同的，因为max是二选一，而$\geq$则取到等号的限制
+對$\epsilon^n\geq0$、$\epsilon^n\geq1-\hat y^n f(x)$來說，它與上式原本是不同的，因為 max 是二選一，而$\geq$則取到等號的限制
 
-但是当加上取loss function $L(f)$最小化这个条件时，$\geq$就要取到等号，两者就是等价的
+但是當加上取 loss function $L(f)$最小化這個條件時，$\geq$就要取到等號，兩者就是等價的
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/svm-formulation.png" width="60%"/></center>
 
-此时该表达式就和你熟知的SVM一样了：
+此時該表達式就和你熟知的 SVM 一樣了：
 
-$L(f)=\sum\limits_n \epsilon^n+\lambda ||w||_2$，且$\hat y^n f(x)\geq 1-\epsilon^n$，其中$\hat y^n$和$f(x)$要同号，$\epsilon^n$要大于等于0，这里$\epsilon^n$的作用就是放宽1的margin，也叫作松弛变量(slack variable)
+$L(f)=\sum\limits_n \epsilon^n+\lambda ||w||_2$，且$\hat y^n f(x)\geq 1-\epsilon^n$，其中$\hat y^n$和$f(x)$要同號，$\epsilon^n$要大於等於 0，這裡$\epsilon^n$的作用就是放寬 1 的 margin，也叫作鬆弛變量(slack variable)
 
-这是一个QP问题(Quadradic programming problem)，可以用对应方法求解，当然前面提到的梯度下降法也可以解
+這是一個 QP 問題(Quadradic programming problem)，可以用對應方法求解，當然前面提到的梯度下降法也可以解
 
 #### Kernel Method
 
 ##### explain linear combination
 
-你要先说服你自己一件事：实际上我们找出来的可以minimize损失函数的参数，其实就是data的线性组合
+你要先說服你自己一件事：實際上我們找出來的可以 minimize 損失函數的參數，其實就是 data 的線性組合
+
 $$
 w^*=\sum\limits_n \alpha^*_n x^n
 $$
-你可以通过拉格朗日乘数法去求解前面的式子来验证，这里试图从梯度下降的角度来解释：
 
-观察$w$的更新过程$w=w-\eta\sum\limits_n c^n(w)x^n$可知，如果$w$被初始化为0，则每次更新的时候都是加上data point $x$的线性组合，因此最终得到的$w$依旧会是$x$的Linear Combination
+你可以通過拉格朗日乘數法去求解前面的式子來驗證，這裡試圖從梯度下降的角度來解釋：
 
-而使用Hinge loss的时候，$c^n(w)$往往会是0，不是所有的$x^n$都会被加到$w$里去，而被加到$w$里的那些$x^n$，就叫做**support vector**
+觀察$w$的更新過程$w=w-\eta\sum\limits_n c^n(w)x^n$可知，如果$w$被初始化為 0，則每次更新的時候都是加上 data point $x$的線性組合，因此最終得到的$w$依舊會是$x$的 Linear Combination
+
+而使用 Hinge loss 的時候，$c^n(w)$往往會是 0，不是所有的$x^n$都會被加到$w$里去，而被加到$w$里的那些$x^n$，就叫做**support vector**
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/svm-dual.png" width="60%"/></center>
 
-SVM解出来的$\alpha_n$是sparse的，因为有很多$x^n$的系数微分为0，这意味着即使从数据集中把这些$x^n$的样本点移除掉，对结果也是没有影响的，这可以增强系统的鲁棒性；而在传统的cross entropy的做法里，每一笔data对结果都会有影响，因此鲁棒性就没有那么好
+SVM 解出來的$\alpha_n$是 sparse 的，因為有很多$x^n$的系數微分為 0，這意味著即使從數據集中把這些$x^n$的樣本點移除掉，對結果也是沒有影響的，這可以增強系統的魯棒性；而在傳統的 cross entropy 的做法里，每一筆 data 對結果都會有影響，因此魯棒性就沒有那麼好
 
 ##### redefine model and loss function
 
-知道$w$是$x^n$的线性组合之后，我们就可以对原先的SVM函数进行改写：
+知道$w$是$x^n$的線性組合之後，我們就可以對原先的 SVM 函數進行改寫：
+
 $$
 w=\sum_n\alpha_nx^n=X\alpha \\
 f(x)=w^Tx=\alpha^TX^Tx=\sum_n\alpha_n(x^n\cdot x)
 $$
-这里的$x$表示新的data，$x^n$表示数据集中已存在的所有data，由于很多$\alpha_n$为0，因此计算量并不是很大
+
+這裡的$x$表示新的 data，$x^n$表示數據集中已存在的所有 data，由於很多$\alpha_n$為 0，因此計算量並不是很大
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/svm-dual2.png" width="60%"/></center>
 
-接下来把$x^n$与$x$的内积改写成Kernel function的形式：$x^n\cdot x=K(x^n,x)$
+接下來把$x^n$與$x$的內積改寫成 Kernel function 的形式：$x^n\cdot x=K(x^n,x)$
 
-此时model就变成了$f(x)= \sum\limits_n\alpha_n K(x^n,x)$，未知的参数变成了$\alpha_n$
+此時 model 就變成了$f(x)= \sum\limits_n\alpha_n K(x^n,x)$，未知的參數變成了$\alpha_n$
 
-现在我们的目标是，找一组最好的$\alpha_n$，让loss最小，此时损失函数改写为：
+現在我們的目標是，找一組最好的$\alpha_n$，讓 loss 最小，此時損失函數改寫為：
+
 $$
 L(f)=\sum\limits_n l(\sum\limits_{n'} \alpha_{n'}K(x^{n'},x^n),\hat y^n)
 $$
-从中可以看出，我们并不需要真的知道$x$的vector是多少，需要知道的只是$x$跟$z$之间的内积值$K(x,z)$，也就是说，只要知道Kernel function $K(x,z)$，就可以去对参数做优化了，这招就叫做**Kernel Trick**
+
+從中可以看出，我們並不需要真的知道$x$的 vector 是多少，需要知道的只是$x$跟$z$之間的內積值$K(x,z)$，也就是說，只要知道 Kernel function $K(x,z)$，就可以去對參數做優化了，這招就叫做**Kernel Trick**
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/svm-dual3.png" width="60%"/></center>
 
 ##### Kernel Trick
 
-linear model会有很多的限制，有时候需要对输入的feature做一些转换之后，才能用linear model来处理，假设现在我们的data是二维的，$x=\left[ \begin{matrix}x_1\\x_2 \end{matrix} \right]$，先要对它做feature transform，然后再去应用Linear SVM
+linear model 會有很多的限制，有時候需要對輸入的 feature 做一些轉換之後，才能用 linear model 來處理，假設現在我們的 data 是二維的，$x=\left[ \begin{matrix}x_1\\x_2 \end{matrix} \right]$，先要對它做 feature transform，然後再去應用 Linear SVM
 
-如果要考虑特征之间的关系，则把特征转换为$\phi(x)=\left[ \begin{matrix}x_1^2\\\sqrt{2}x_1x_2\\ x_2^2 \end{matrix} \right]$，此时Kernel function就变为：
+如果要考慮特徵之間的關係，則把特徵轉換為$\phi(x)=\left[ \begin{matrix}x_1^2\\\sqrt{2}x_1x_2\\ x_2^2 \end{matrix} \right]$，此時 Kernel function 就變為：
+
 $$
 K(x,z)=\phi(x)\cdot \phi(z)=\left[ \begin{matrix}x_1^2\\\sqrt{2}x_1x_2\\ x_2^2 \end{matrix} \right] \cdot \left[ \begin{matrix}z_1^2\\\sqrt{2}z_1z_2\\ z_2^2 \end{matrix} \right]=(x_1z_1+x_2z_2)^2=(\left[ \begin{matrix}x_1\\x_2 \end{matrix} \right]\cdot \left[ \begin{matrix}z_1\\z_2 \end{matrix} \right])^2=(x\cdot z)^2
 $$
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/svm-kernel.png" width="60%"/></center>
 
-可见，我们对$x$和$z$做特征转换+内积，就等同于**在原先的空间上先做内积再平方**，在高维空间里，这种方式可以有更快的速度和更小的运算量
+可見，我們對$x$和$z$做特徵轉換+內積，就等同於**在原先的空間上先做內積再平方**，在高維空間里，這種方式可以有更快的速度和更小的運算量
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/svm-kernel2.png" width="60%"/></center>
 
 ##### RBF Kernel
 
-在RBF Kernel中，$K(x,z)=e^{-\frac{1}{2}||x-z||_2}$，实际上也可以表示为$\phi(x)\cdot \phi(z)$，只不过$\phi(*)$的维数是无穷大的，所以我们直接使用Kernel trick计算，其实就等同于在无穷多维的空间中计算两个向量的内积
+在 RBF Kernel 中，$K(x,z)=e^{-\frac{1}{2}||x-z||_2}$，實際上也可以表示為$\phi(x)\cdot \phi(z)$，只不過$\phi(*)$的維數是無窮大的，所以我們直接使用 Kernel trick 計算，其實就等同於在無窮多維的空間中計算兩個向量的內積
 
-将Kernel展开成无穷维如下：
+將 Kernel 展開成無窮維如下：
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/svm-kernel3.png" width="60%"/></center>
 
-把与$x$相关的无穷多项串起来就是$\phi(x)$，把与$z$相关的无穷多项串起来就是$\phi(z)$，也就是说，当你使用RBF Kernel的时候，实际上就是在无穷多维的平面上做事情，当然这也意味着很容易过拟合
+把與$x$相關的無窮多項串起來就是$\phi(x)$，把與$z$相關的無窮多項串起來就是$\phi(z)$，也就是說，當你使用 RBF Kernel 的時候，實際上就是在無窮多維的平面上做事情，當然這也意味著很容易過擬合
 
 ##### Sigmoid Kernel
 
 Sigmoid Kernel：$K(x,z)=\tanh(x,z)$
 
-如果使用的是Sigmoid Kernel，那model $f(x)$就可以被看作是只有一层hidden layer的神经网络，其中$x^1$\~$x^n$可以被看作是neuron的weight，变量$x$乘上这些weight，再通过tanh激活函数，最后全部乘上$\alpha^1$\~$\alpha^n$做加权和，得到最后的$f(x)$
+如果使用的是 Sigmoid Kernel，那 model $f(x)$就可以被看作是只有一層 hidden layer 的神經網絡，其中$x^1$\~$x^n$可以被看作是 neuron 的 weight，變量$x$乘上這些 weight，再通過 tanh 激活函數，最後全部乘上$\alpha^1$\~$\alpha^n$做加權和，得到最後的$f(x)$
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/svm-kernel4.png" width="60%"/></center>
 
-其中neuron的数目，由support vector的数量决定
+其中 neuron 的數目，由 support vector 的數量決定
 
 ##### Design Kernel Function
 
-既然有了Kernel Trick，其实就可以直接去设计Kernel Function，它代表了投影到高维以后的内积，类似于相似度的概念
+既然有了 Kernel Trick，其實就可以直接去設計 Kernel Function，它代表了投影到高維以後的內積，類似於相似度的概念
 
-我们完全可以不去管$x$和$z$的特征长什么样，因为用低维的$x$和$z$加上$K(x,z)$，就可以直接得到高维空间中$x$和$z$经过转换后的内积，这样就省去了转换特征这一步
+我們完全可以不去管$x$和$z$的特徵長什麼樣，因為用低維的$x$和$z$加上$K(x,z)$，就可以直接得到高維空間中$x$和$z$經過轉換後的內積，這樣就省去了轉換特徵這一步
 
-当$x$是一个有结构的对象，比如不同长度的sequence，它们其实不容易被表示成vector，我们不知道$x$的样子，就更不用说$\phi(x)$了，但是只要知道怎么计算两者之间的相似度，就有机会把这个Similarity当做Kernel来使用
+當$x$是一個有結構的對象，比如不同長度的 sequence，它們其實不容易被表示成 vector，我們不知道$x$的樣子，就更不用說$\phi(x)$了，但是只要知道怎麼計算兩者之間的相似度，就有機會把這個 Similarity 當做 Kernel 來使用
 
-我们随便定义一个Kernel Function，其实并不一定能够拆成两个向量内积的结果，但有Mercer's theory可以帮助你判断当前的function是否可拆分
+我們隨便定義一個 Kernel Function，其實並不一定能夠拆成兩個向量內積的結果，但有 Mercer's theory 可以幫助你判斷當前的 function 是否可拆分
 
-下图是直接定义语音vector之间的相似度$K(x,z)$来做Kernel Trick的示例：
+下圖是直接定義語音 vector 之間的相似度$K(x,z)$來做 Kernel Trick 的示例：
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/svm-kernel5.png" width="60%"/></center>
 
 #### SVM vs Deep Learning
 
-这里简单比较一下SVM和Deep Learning的差别：
+這裡簡單比較一下 SVM 和 Deep Learning 的差別：
 
-- deep learning的前几层layer可以看成是在做feature transform，而后几层layer则是在做linear classifier
+- deep learning 的前幾層 layer 可以看成是在做 feature transform，而後幾層 layer 則是在做 linear classifier
 
-- SVM也类似，先用Kernel Function把feature transform到高维空间上，然后再使用linear classifier
+- SVM 也類似，先用 Kernel Function 把 feature transform 到高維空間上，然後再使用 linear classifier
 
-    在SVM里一般Linear Classifier都会采用Hinge Loss
+  在 SVM 里一般 Linear Classifier 都會採用 Hinge Loss
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/svm-dl.png" width="60%"/></center>

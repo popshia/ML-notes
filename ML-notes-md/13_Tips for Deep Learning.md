@@ -1,581 +1,594 @@
 # Tips for Deep Learning
 
-> 本文会顺带解决CNN部分的两个问题：
-> 1、max pooling架构中用到的max无法微分，那在gradient descent的时候该如何处理？
-> 2、L1 的Regression到底是什么东西
+> 本文會順帶解決 CNN 部分的兩個問題：
+> 1、max pooling 架構中用到的 max 無法微分，那在 gradient descent 的時候該如何處理？
+> 2、L1 的 Regression 到底是什麼東西
 >
-> 本文的主要思路：针对training set和testing set上的performance分别提出针对性的解决方法
-> 1、在training set上准确率不高：
-> 	  new activation function：ReLU、Maxout
-> 	  adaptive learning rate：Adagrad、RMSProp、Momentum、Adam
-> 2、在testing set上准确率不高：Early Stopping、Regularization or Dropout
+> 本文的主要思路：針對 training set 和 testing set 上的 performance 分別提出針對性的解決方法
+> 1、在 training set 上準確率不高：
+> new activation function：ReLU、Maxout
+> adaptive learning rate：Adagrad、RMSProp、Momentum、Adam
+> 2、在 testing set 上準確率不高：Early Stopping、Regularization or Dropout
 
 ### Recipe of Deep Learning
 
 #### three step of deep learning
 
-Recipe，配方、秘诀，这里指的是做deep learning的流程应该是什么样子
+Recipe，配方、秘訣，這裡指的是做 deep learning 的流程應該是什麼樣子
 
-我们都已经知道了deep learning的三个步骤
+我們都已經知道了 deep learning 的三個步驟
 
-- define the function set(network structure) 
+- define the function set(network structure)
 - goodness of function(loss function -- cross entropy)
 - pick the best function(gradient descent -- optimization)
 
-做完这些事情以后，你会得到一个更好的neural network，那接下来你要做什么事情呢？
+做完這些事情以後，你會得到一個更好的 neural network，那接下來你要做什麼事情呢？
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/recipe-dl.png" width="60%;" /></center>
 #### Good Results on Training Data？
 
-你要做的第一件事是，**提高model在training set上的正确率**
+你要做的第一件事是，**提高 model 在 training set 上的正確率**
 
-先检查training set的performance其实是deep learning一个非常unique的地方，如果今天你用的是k-nearest neighbor或decision tree这类非deep learning的方法，做完以后你其实会不太想检查training set的结果，因为在training set上的performance正确率就是100，没有什么好检查的
+先檢查 training set 的 performance 其實是 deep learning 一個非常 unique 的地方，如果今天你用的是 k-nearest neighbor 或 decision tree 這類非 deep learning 的方法，做完以後你其實會不太想檢查 training set 的結果，因為在 training set 上的 performance 正確率就是 100，沒有什麼好檢查的
 
-有人说deep learning的model里这么多参数，感觉一脸很容易overfitting的样子，但实际上这个deep learning的方法，它才不容易overfitting，我们说的**overfitting就是在training set上performance很好，但在testing set上performance没有那么好**；只有像k nearest neighbor，decision tree这类方法，它们在training set上正确率都是100，这才是非常容易overfitting的，而对deep learning来说，overfitting往往不会是你遇到的第一个问题
+有人說 deep learning 的 model 里這麼多參數，感覺一臉很容易 overfitting 的樣子，但實際上這個 deep learning 的方法，它才不容易 overfitting，我們說的**overfitting 就是在 training set 上 performance 很好，但在 testing set 上 performance 沒有那麼好**；只有像 k nearest neighbor，decision tree 這類方法，它們在 training set 上正確率都是 100，這才是非常容易 overfitting 的，而對 deep learning 來說，overfitting 往往不會是你遇到的第一個問題
 
-因为你在training的时候，deep learning并不是像k nearest neighbor这种方法一样，一训练就可以得到非常好的正确率，它有可能在training set上根本没有办法给你一个好的正确率，所以，这个时候你要回头去检查在前面的step里面要做什么样的修改，好让你在training set上可以得到比较高的正确率
+因為你在 training 的時候，deep learning 並不是像 k nearest neighbor 這種方法一樣，一訓練就可以得到非常好的正確率，它有可能在 training set 上根本沒有辦法給你一個好的正確率，所以，這個時候你要回頭去檢查在前面的 step 裡面要做什麼樣的修改，好讓你在 training set 上可以得到比較高的正確率
 
 #### Good Results on Testing Data？
 
-接下来你要做的事是，**提高model在testing set上的正确率**
+接下來你要做的事是，**提高 model 在 testing set 上的正確率**
 
-假设现在你已经在training set上得到好的performance了，那接下来就把model apply到testing set上，我们最后真正关心的，是testing set上的performance，假如得到的结果不好，这个情况下发生的才是Overfitting，也就是在training set上得到好的结果，却在testing set上得到不好的结果
+假設現在你已經在 training set 上得到好的 performance 了，那接下來就把 model apply 到 testing set 上，我們最後真正關心的，是 testing set 上的 performance，假如得到的結果不好，這個情況下發生的才是 Overfitting，也就是在 training set 上得到好的結果，卻在 testing set 上得到不好的結果
 
-那你要回过头去做一些事情，试着解决overfitting，但有时候你加了新的technique，想要overcome overfitting这个problem的时候，其实反而会让training set上的结果变坏；所以你在做完这一步的修改以后，要先回头去检查新的model在training set上的结果，如果这个结果变坏的话，你就要从头对network training的process做一些调整，那如果你同时在training set还有testing set上都得到好结果的话，你就成功了，最后就可以把你的系统真正用在application上面了
+那你要回過頭去做一些事情，試著解決 overfitting，但有時候你加了新的 technique，想要 overcome overfitting 這個 problem 的時候，其實反而會讓 training set 上的結果變壞；所以你在做完這一步的修改以後，要先回頭去檢查新的 model 在 training set 上的結果，如果這個結果變壞的話，你就要從頭對 network training 的 process 做一些調整，那如果你同時在 training set 還有 testing set 上都得到好結果的話，你就成功了，最後就可以把你的系統真正用在 application 上面了
 
 #### Do not always blame overfitting
 
-不要看到所有不好的performance就归责于overfitting
+不要看到所有不好的 performance 就歸責於 overfitting
 
-先看右边testing data的图，横坐标是model做gradient descent所update的次数，纵坐标则是error rate(越低说明model表现得越好)，黄线表示的是20层的neural network，红色表示56层的neural network
+先看右邊 testing data 的圖，橫坐標是 model 做 gradient descent 所 update 的次數，縱坐標則是 error rate(越低說明 model 表現得越好)，黃線表示的是 20 層的 neural network，紅色表示 56 層的 neural network
 
-你会发现，这个56层network的error rate比较高，它的performance比较差，而20层network的performance则是比较好的，有些人看到这个图，就会马上得到一个结论：56层的network参数太多了，56层果然没有必要，这个是overfitting。但是，真的是这样子吗？
+你會發現，這個 56 層 network 的 error rate 比較高，它的 performance 比較差，而 20 層 network 的 performance 則是比較好的，有些人看到這個圖，就會馬上得到一個結論：56 層的 network 參數太多了，56 層果然沒有必要，這個是 overfitting。但是，真的是這樣子嗎？
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/blame-over.png" width="60%;" /></center>
-你在说结果是overfitting之前，有检查过training set上的performance吗？对neural network来说，在training set上得到的结果很可能会像左边training error的图，也就是说，20层的network本来就要比56层的network表现得更好，所以testing set得到的结果并不能说明56层的case就是发生了overfitting
+你在說結果是overfitting之前，有檢查過training set上的performance嗎？對neural network來說，在training set上得到的結果很可能會像左邊training error的圖，也就是說，20層的network本來就要比56層的network表現得更好，所以testing set得到的結果並不能說明56層的case就是發生了overfitting
 
-在做neural network training的时候，有太多太多的问题可以让你的training set表现的不好，比如说我们有local minimum的问题，有saddle point的问题，有plateau的问题...所以这个56层的neural network，有可能在train的时候就卡在了一个local minimum的地方，于是得到了一个差的参数，但这并不是overfitting，而是在training的时候就没有train好
+在做 neural network training 的時候，有太多太多的問題可以讓你的 training set 表現的不好，比如說我們有 local minimum 的問題，有 saddle point 的問題，有 plateau 的問題...所以這個 56 層的 neural network，有可能在 train 的時候就卡在了一個 local minimum 的地方，於是得到了一個差的參數，但這並不是 overfitting，而是在 training 的時候就沒有 train 好
 
-有人认为这个问题叫做underfitting，但我的理解上，**underfitting**的本意应该是指这个model的complexity不足，这个model的参数不够多，所以它的能力不足以解出这个问题；但这个56层的network，它的参数是比20层的network要来得多的，所以它明明有能力比20层的network要做的更好，却没有得到理想的结果，这种情况不应该被称为underfitting，其实就只是没有train好而已
+有人認為這個問題叫做 underfitting，但我的理解上，**underfitting**的本意應該是指這個 model 的 complexity 不足，這個 model 的參數不夠多，所以它的能力不足以解出這個問題；但這個 56 層的 network，它的參數是比 20 層的 network 要來得多的，所以它明明有能力比 20 層的 network 要做的更好，卻沒有得到理想的結果，這種情況不應該被稱為 underfitting，其實就只是沒有 train 好而已
 
 #### conclusion
 
-当你在deep learning的文献上看到某种方法的时候，永远要想一下，这个方法是要解决什么样的问题，因为在deep learning里面，有两个问题：
+當你在 deep learning 的文獻上看到某種方法的時候，永遠要想一下，這個方法是要解決什麼樣的問題，因為在 deep learning 裡面，有兩個問題：
 
-- 在training set上的performance不够好
-- 在testing set上的performance不够好
+- 在 training set 上的 performance 不夠好
+- 在 testing set 上的 performance 不夠好
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/different-methods.png" width="60%;" /></center>
-当只有一个方法propose(提出)的时候，它往往只针对这两个问题的其中一个来做处理，举例来说，deep learning有一个很潮的方法叫做dropout，那很多人就会说，哦，这么潮的方法，所以今天只要看到performance不好，我就去用dropout；但是，其实只有在testing的结果不好的时候，才可以去apply dropout，如果你今天的问题只是training的结果不好，那你去apply dropout，只会越train越差而已
+當只有一個方法propose(提出)的時候，它往往只針對這兩個問題的其中一個來做處理，舉例來說，deep learning有一個很潮的方法叫做dropout，那很多人就會說，哦，這麼潮的方法，所以今天只要看到performance不好，我就去用dropout；但是，其實只有在testing的結果不好的時候，才可以去apply dropout，如果你今天的問題只是training的結果不好，那你去apply dropout，只會越train越差而已
 
-所以，你**必须要先想清楚现在的问题到底是什么，然后再根据这个问题去找针对性的方法**，而不是病急乱投医，甚至是盲目诊断
+所以，你**必須要先想清楚現在的問題到底是什麼，然後再根據這個問題去找針對性的方法**，而不是病急亂投醫，甚至是盲目診斷
 
-下面我们分别从Training data和Testing data两个问题出发，来讲述一些针对性优化的方法
+下面我們分別從 Training data 和 Testing data 兩個問題出發，來講述一些針對性優化的方法
 
 ### Good Results on Training Data？
 
-这一部分主要讲述如何在Training data上得到更好的performance，分为两个模块，New activation function和Adaptive Learning Rate
+這一部分主要講述如何在 Training data 上得到更好的 performance，分為兩個模塊，New activation function 和 Adaptive Learning Rate
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/different-method.png" width="60%;" /></center>
 #### New activation function
 
-这个部分主要讲述的是关于Recipe of Deep Learning中New activation function的一些理论
+這個部分主要講述的是關於 Recipe of Deep Learning 中 New activation function 的一些理論
 
 ##### activation function
 
-如果你今天的training结果不好，很有可能是因为你的network架构设计得不好。举例来说，可能你用的activation function是对training比较不利的，那你就尝试着换一些新的activation function，也许可以带来比较好的结果
+如果你今天的 training 結果不好，很有可能是因為你的 network 架構設計得不好。舉例來說，可能你用的 activation function 是對 training 比較不利的，那你就嘗試著換一些新的 activation function，也許可以帶來比較好的結果
 
-在1980年代，比较常用的activation function是sigmoid function，如果现在我们使用sigmoid function，你会发现deeper不一定imply better，下图是在MNIST手写数字识别上的结果，当layer越来越多的时候，accuracy一开始持平，后来就掉下去了，在layer是9层、10层的时候，整个结果就崩溃了；但注意！9层、10层的情况并不能被认为是因为参数太多而导致overfitting，实际上这张图就只是training set的结果，你都不知道testing的情况，又哪来的overfitting之说呢？
+在 1980 年代，比較常用的 activation function 是 sigmoid function，如果現在我們使用 sigmoid function，你會發現 deeper 不一定 imply better，下圖是在 MNIST 手寫數字識別上的結果，當 layer 越來越多的時候，accuracy 一開始持平，後來就掉下去了，在 layer 是 9 層、10 層的時候，整個結果就崩潰了；但注意！9 層、10 層的情況並不能被認為是因為參數太多而導致 overfitting，實際上這張圖就只是 training set 的結果，你都不知道 testing 的情況，又哪來的 overfitting 之說呢？
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/deep-not-ok.png" width="60%;" /></center>
 ##### Vanishing Gradient Problem
 
-上面这个问题的原因不是overfitting，而是Vanishing Gradient(梯度消失)，解释如下：
+上面這個問題的原因不是 overfitting，而是 Vanishing Gradient(梯度消失)，解釋如下：
 
-当你把network叠得很深的时候，在靠近input的地方，这些参数的gradient(即对最后loss function的微分)是比较小的；而在比较靠近output的地方，它对loss的微分值会是比较大的
+當你把 network 疊得很深的時候，在靠近 input 的地方，這些參數的 gradient(即對最後 loss function 的微分)是比較小的；而在比較靠近 output 的地方，它對 loss 的微分值會是比較大的
 
-因此当你设定同样learning rate的时候，靠近input的地方，它参数的update是很慢的；而靠近output的地方，它参数的update是比较快的
+因此當你設定同樣 learning rate 的時候，靠近 input 的地方，它參數的 update 是很慢的；而靠近 output 的地方，它參數的 update 是比較快的
 
-所以在靠近input的地方，参数几乎还是random的时候，output就已经根据这些random的结果找到了一个local minima，然后就converge(收敛)了
+所以在靠近 input 的地方，參數幾乎還是 random 的時候，output 就已經根據這些 random 的結果找到了一個 local minima，然後就 converge(收斂)了
 
-这个时候你会发现，参数的loss下降的速度变得很慢，你就会觉得gradient已经接近于0了，于是把程序停掉了，由于这个converge，是几乎base on random的参数，所以model的参数并没有被训练充分，那在training data上得到的结果肯定是很差的
+這個時候你會發現，參數的 loss 下降的速度變得很慢，你就會覺得 gradient 已經接近於 0 了，於是把程序停掉了，由於這個 converge，是幾乎 base on random 的參數，所以 model 的參數並沒有被訓練充分，那在 training data 上得到的結果肯定是很差的
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/vanishing.png" width="60%;" /></center>
-为什么会有这个现象发生呢？如果你自己把Backpropagation的式子写出来的话，就可以很轻易地发现用sigmoid function会导致这件事情的发生；但是，我们今天不看Backpropagation的式子，其实从直觉上来想你也可以了解这件事情发生的原因
+為什麼會有這個現象發生呢？如果你自己把Backpropagation的式子寫出來的話，就可以很輕易地發現用sigmoid function會導致這件事情的發生；但是，我們今天不看Backpropagation的式子，其實從直覺上來想你也可以瞭解這件事情發生的原因
 
-某一个参数$w$对total cost $l$的偏微分，即gradient $\frac{\partial l}{\partial w}$，它直觉的意思是说，当我今天把这个参数做小小的变化的时候，它对这个cost的影响有多大；那我们就把第一个layer里的某一个参数$w$加上$\Delta w$，看看对network的output和target之间的loss有什么样的影响
+某一個參數$w$對 total cost $l$的偏微分，即 gradient $\frac{\partial l}{\partial w}$，它直覺的意思是說，當我今天把這個參數做小小的變化的時候，它對這個 cost 的影響有多大；那我們就把第一個 layer 里的某一個參數$w$加上$\Delta w$，看看對 network 的 output 和 target 之間的 loss 有什麼樣的影響
 
-$\Delta w$通过sigmoid function之后，得到output是会变小的，改变某一个参数的weight，会对某个neuron的output值产生影响，但是这个影响是会随着层数的递增而衰减的，sigmoid function的形状如下所示，它会把负无穷大到正无穷大之间的值都硬压到0~1之间，把较大的input压缩成较小的output
+$\Delta w$通過 sigmoid function 之後，得到 output 是會變小的，改變某一個參數的 weight，會對某個 neuron 的 output 值產生影響，但是這個影響是會隨著層數的遞增而衰減的，sigmoid function 的形狀如下所示，它會把負無窮大到正無窮大之間的值都硬壓到 0~1 之間，把較大的 input 壓縮成較小的 output
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/sigmoid-less.png" width="35%;" /></center>
-因此即使$\Delta w$值很大，但每经过一个sigmoid function就会被缩小一次，所以network越深，$\Delta w$被衰减的次数就越多，直到最后，它对output的影响就是比较小的，相应的也导致input对loss的影响会比较小，于是靠近input的那些weight对loss的gradient $\frac{\partial l}{\partial w}$远小于靠近output的gradient
+因此即使$\Delta w$值很大，但每經過一個sigmoid function就會被縮小一次，所以network越深，$\Delta w$被衰減的次數就越多，直到最後，它對output的影響就是比較小的，相應的也導致input對loss的影響會比較小，於是靠近input的那些weight對loss的gradient $\frac{\partial l}{\partial w}$遠小於靠近output的gradient
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/vanish.png" width="60%;" /></center>
-那怎么解决这个问题呢？比较早年的做法是去train RBM，它的精神就是，先把第一个layer train好，再去train第二个，然后再第三个...所以最后你在做Backpropagation的时候，尽管第一个layer几乎没有被train到，但一开始在做pre-train的时候就已经把它给train好了，这样RBM就可以在一定程度上解决问题
+那怎麼解決這個問題呢？比較早年的做法是去train RBM，它的精神就是，先把第一個layer train好，再去train第二個，然後再第三個...所以最後你在做Backpropagation的時候，儘管第一個layer幾乎沒有被train到，但一開始在做pre-train的時候就已經把它給train好了，這樣RBM就可以在一定程度上解決問題
 
-但其实改一下activation function可能就可以handle这个问题了
+但其實改一下 activation function 可能就可以 handle 這個問題了
 
 ##### ReLU
 
 ###### introduction
 
-现在比较常用的activation function叫做Rectified Linear Unit(整流线性单元函数，又称修正线性单元)，它的缩写是ReLU，该函数形状如下图所示，z为input，a为output，如果input>0则output = input，如果input<0则output = 0
+現在比較常用的 activation function 叫做 Rectified Linear Unit(整流線性單元函數，又稱修正線性單元)，它的縮寫是 ReLU，該函數形狀如下圖所示，z 為 input，a 為 output，如果 input>0 則 output = input，如果 input<0 則 output = 0
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/ReLU1.png" width="60%;" /></center>
-选择ReLU的理由如下：
+選擇ReLU的理由如下：
 
-- 跟sigmoid function比起来，ReLU的运算快很多
-- ReLU的想法结合了生物上的观察( Pengel的paper )
-- 无穷多bias不同的sigmoid function叠加的结果会变成ReLU
-- ReLU可以处理Vanishing gradient的问题( the most important thing )
+- 跟 sigmoid function 比起來，ReLU 的運算快很多
+- ReLU 的想法結合了生物上的觀察( Pengel 的 paper )
+- 無窮多 bias 不同的 sigmoid function 疊加的結果會變成 ReLU
+- ReLU 可以處理 Vanishing gradient 的問題( the most important thing )
 
 ###### handle Vanishing gradient problem
 
-下图是ReLU的neural network，以ReLU作为activation function的neuron，它的output要么等于0，要么等于input
+下圖是 ReLU 的 neural network，以 ReLU 作為 activation function 的 neuron，它的 output 要麼等於 0，要麼等於 input
 
-当output=input的时候，这个activation function就是linear的；而output=0的neuron对整个network是没有任何作用的，因此可以把它们从network中拿掉
+當 output=input 的時候，這個 activation function 就是 linear 的；而 output=0 的 neuron 對整個 network 是沒有任何作用的，因此可以把它們從 network 中拿掉
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/relu1.png" width="60%;" /></center>
-拿掉所有output为0的neuron后如下图所示，此时整个network就变成了一个瘦长的**linear** network，linear的好处是，output=input，不会像sigmoid function一样使input产生的影响逐层递减
+拿掉所有output為0的neuron後如下圖所示，此時整個network就變成了一個瘦長的**linear** network，linear的好處是，output=input，不會像sigmoid function一樣使input產生的影響逐層遞減
 
-Q：这里就会有一个问题，我们之所以使用deep learning，就是因为想要一个non-linear、比较复杂的function，而使用ReLU不就会让它变成一个linear function吗？这样得到的function不是会变得很弱吗？
+Q：這裡就會有一個問題，我們之所以使用 deep learning，就是因為想要一個 non-linear、比較複雜的 function，而使用 ReLU 不就會讓它變成一個 linear function 嗎？這樣得到的 function 不是會變得很弱嗎？
 
-A：其实，使用ReLU之后的network整体来说还是non-linear的，如果你对input做小小的改变，不改变neuron的operation region的话，那network就是一个linear function；但是，如果你对input做比较大的改变，导致neuron的operation region被改变的话，比如从output=0转变到了output=input，network整体上就变成了non-linear function
+A：其實，使用 ReLU 之後的 network 整體來說還是 non-linear 的，如果你對 input 做小小的改變，不改變 neuron 的 operation region 的話，那 network 就是一個 linear function；但是，如果你對 input 做比較大的改變，導致 neuron 的 operation region 被改變的話，比如從 output=0 轉變到了 output=input，network 整體上就變成了 non-linear function
 
-注：这里的region是指input z<0和input z>0的两个范围
+注：這裡的 region 是指 input z<0 和 input z>0 的兩個範圍
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/relu2.png" width="60%;" /></center>
-Q：还有另外一个问题，我们对loss function做gradient descent，要求neural network是可以做微分的，但ReLU是一个分段函数，它是不能微分的(至少在z=0这个点是不可微的)，那该怎么办呢？
+Q：還有另外一個問題，我們對loss function做gradient descent，要求neural network是可以做微分的，但ReLU是一個分段函數，它是不能微分的(至少在z=0這個點是不可微的)，那該怎麼辦呢？
 
-A：在实际操作上，当region的范围处于z>0时，微分值gradient就是1；当region的范围处于z<0时，微分值gradient就是0；当z为0时，就不要管它，相当于把它从network里面拿掉
+A：在實際操作上，當 region 的範圍處於 z>0 時，微分值 gradient 就是 1；當 region 的範圍處於 z<0 時，微分值 gradient 就是 0；當 z 為 0 時，就不要管它，相當於把它從 network 裡面拿掉
 
 ###### ReLU-variant
 
-其实ReLU还存在一定的问题，比如当input<0的时候，output=0，此时微分值gradient也为0，你就没有办法去update参数了，所以我们应该让input<0的时候，微分后还能有一点点的值，比如令$a=0.01z$，这个东西就叫做**Leaky ReLU**
+其實 ReLU 還存在一定的問題，比如當 input<0 的時候，output=0，此時微分值 gradient 也為 0，你就沒有辦法去 update 參數了，所以我們應該讓 input<0 的時候，微分後還能有一點點的值，比如令$a=0.01z$，這個東西就叫做**Leaky ReLU**
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/relu-variant.png" width="60%;" /></center>
-既然a可以等于0.01z，那这个z的系数可不可以是0.07、0.08之类呢？所以就有人提出了**Parametric ReLU**，也就是令$a=\alpha \cdot z$，其中$\alpha$并不是固定的值，而是network的一个参数，它可以通过training data学出来，甚至每个neuron都可以有不同的$\alpha$值
+既然a可以等於0.01z，那這個z的系數可不可以是0.07、0.08之類呢？所以就有人提出了**Parametric ReLU**，也就是令$a=\alpha \cdot z$，其中$\alpha$並不是固定的值，而是network的一個參數，它可以通過training data學出來，甚至每個neuron都可以有不同的$\alpha$值
 
-这个时候又有人想，为什么一定要是ReLU这样子呢，activation function可不可以有别的样子呢？所以后来有了一个更进阶的想法，叫做**Maxout network**
+這個時候又有人想，為什麼一定要是 ReLU 這樣子呢，activation function 可不可以有別的樣子呢？所以後來有了一個更進階的想法，叫做**Maxout network**
 
 ##### Maxout
 
 ###### introduction
 
-Maxout的想法是，让network自动去学习它的activation function，那Maxout network就可以自动学出ReLU，也可以学出其他的activation function，这一切都是由training data来决定的
+Maxout 的想法是，讓 network 自動去學習它的 activation function，那 Maxout network 就可以自動學出 ReLU，也可以學出其他的 activation function，這一切都是由 training data 來決定的
 
-假设现在有input $x_1,x_2$，它们乘上几组不同的weight分别得到5,7,-1,1，这些值本来是不同neuron的input，它们要通过activation function变为neuron的output；但在Maxout network里，我们事先决定好将某几个“neuron”的input分为一个group，比如5,7分为一个group，然后在这个group里选取一个最大值7作为output
+假設現在有 input $x_1,x_2$，它們乘上幾組不同的 weight 分別得到 5,7,-1,1，這些值本來是不同 neuron 的 input，它們要通過 activation function 變為 neuron 的 output；但在 Maxout network 里，我們事先決定好將某幾個「neuron」的 input 分為一個 group，比如 5,7 分為一個 group，然後在這個 group 里選取一個最大值 7 作為 output
 
-这个过程就好像在一个layer上做Max Pooling一样，它和原来的network不同之处在于，它把原来几个“neuron”的input按一定规则组成了一个group，然后并没有使它们通过activation function，而是选取其中的最大值当做这几个“neuron”的output
+這個過程就好像在一個 layer 上做 Max Pooling 一樣，它和原來的 network 不同之處在於，它把原來幾個「neuron」的 input 按一定規則組成了一個 group，然後並沒有使它們通過 activation function，而是選取其中的最大值當做這幾個「neuron」的 output
 
-当然，实际上原来的”neuron“早就已经不存在了，这几个被合并的“neuron”应当被看做是一个新的neuron，这个新的neuron的input是原来几个“neuron”的input组成的vector，output则取input的最大值，而并非由activation function产生
+當然，實際上原來的」neuron「早就已經不存在了，這幾個被合併的「neuron」應當被看做是一個新的 neuron，這個新的 neuron 的 input 是原來幾個「neuron」的 input 組成的 vector，output 則取 input 的最大值，而並非由 activation function 產生
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/maxout1.png" width="60%;" /></center>
-在实际操作上，几个element被分为一个group这件事情是由你自己决定的，它就是network structure里一个需要被调的参数，不一定要跟上图一样两个分为一组
+在實際操作上，幾個element被分為一個group這件事情是由你自己決定的，它就是network structure里一個需要被調的參數，不一定要跟上圖一樣兩個分為一組
 
 ###### Maxout -> RELU
 
-Maxout是如何模仿出ReLU这个activation function的呢？
+Maxout 是如何模仿出 ReLU 這個 activation function 的呢？
 
-下图左上角是一个ReLU的neuron，它的input x会乘上neuron的weight w，再加上bias b，然后通过activation function-ReLU，得到output a
+下圖左上角是一個 ReLU 的 neuron，它的 input x 會乘上 neuron 的 weight w，再加上 bias b，然後通過 activation function-ReLU，得到 output a
 
-- neuron的input为$z=wx+b$，为下图左下角紫线
-- neuron的output为$a=z\ (z>0);\ a=0\ (z<0)$，为下图左下角绿线
+- neuron 的 input 為$z=wx+b$，為下圖左下角紫線
+- neuron 的 output 為$a=z\ (z>0);\ a=0\ (z<0)$，為下圖左下角綠線
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/maxout2.png" width="60%;" /></center>
-如果我们使用的是上图右上角所示的Maxout network，假设$z_1$的参数w和b与ReLU的参数一致，而$z_2$的参数w和b全部设为0，然后做Max Pooling，选取$z_1,z_2$较大值作为a
+如果我們使用的是上圖右上角所示的Maxout network，假設$z_1$的參數w和b與ReLU的參數一致，而$z_2$的參數w和b全部設為0，然後做Max Pooling，選取$z_1,z_2$較大值作為a
 
-- neuron的input为$\begin{bmatrix}z_1 \ z_2 \end{bmatrix}$
-    - $z_1=wx+b$，为上图右下角紫线
-    - $z_2=0$，为上图右下角红线
-- neuron的output为$\max{\begin{bmatrix}z_1 \ z_2 \end{bmatrix}}$，为上图右下角绿线
+- neuron 的 input 為$\begin{bmatrix}z_1 \ z_2 \end{bmatrix}$
+  - $z_1=wx+b$，為上圖右下角紫線
+  - $z_2=0$，為上圖右下角紅線
+- neuron 的 output 為$\max{\begin{bmatrix}z_1 \ z_2 \end{bmatrix}}$，為上圖右下角綠線
 
-你会发现，此时ReLU和Maxout所得到的output是一模一样的，它们是相同的activation function
+你會發現，此時 ReLU 和 Maxout 所得到的 output 是一模一樣的，它們是相同的 activation function
 
 ###### Maxout -> More than ReLU
 
-除了ReLU，Maxout还可以实现更多不同的activation function
+除了 ReLU，Maxout 還可以實現更多不同的 activation function
 
-比如$z_2$的参数w和b不是0，而是$w',b'$，此时
+比如$z_2$的參數 w 和 b 不是 0，而是$w',b'$，此時
 
-- neuron的input为$\begin{bmatrix}z_1 \ z_2 \end{bmatrix}$
-    - $z_1=wx+b$，为下图右下角紫线
-    - $z_2=w'x+b'$，为下图右下角红线
-- neuron的output为$\max{\begin{bmatrix}z_1 \ z_2 \end{bmatrix}}$，为下图右下角绿线
+- neuron 的 input 為$\begin{bmatrix}z_1 \ z_2 \end{bmatrix}$
+  - $z_1=wx+b$，為下圖右下角紫線
+  - $z_2=w'x+b'$，為下圖右下角紅線
+- neuron 的 output 為$\max{\begin{bmatrix}z_1 \ z_2 \end{bmatrix}}$，為下圖右下角綠線
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/maxout3.png" width="60%;" /></center>
-这个时候你得到的activation function的形状(绿线形状)，是由network的参数$w,b,w',b'$决定的，因此它是一个**Learnable Activation Function**，具体的形状可以根据training data去generate出来
+這個時候你得到的activation function的形狀(綠線形狀)，是由network的參數$w,b,w',b'$決定的，因此它是一個**Learnable Activation Function**，具體的形狀可以根據training data去generate出來
 
 ###### property
 
-Maxout可以实现任何piecewise linear convex activation function(分段线性凸激活函数)，其中这个activation function被分为多少段，取决于你把多少个element z放到一个group里，下图分别是2个element一组和3个element一组的activation function的不同形状
+Maxout 可以實現任何 piecewise linear convex activation function(分段線性凸激活函數)，其中這個 activation function 被分為多少段，取決於你把多少個 element z 放到一個 group 里，下圖分別是 2 個 element 一組和 3 個 element 一組的 activation function 的不同形狀
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/maxout4.png" width="60%;" /></center>
 ###### How to train Maxout
 
-接下来我们要面对的是，怎么去train一个Maxout network，如何解决Max不能微分的问题
+接下來我們要面對的是，怎麼去 train 一個 Maxout network，如何解決 Max 不能微分的問題
 
-假设在下面的Maxout network中，红框圈起来的部分为每个neuron的output
+假設在下面的 Maxout network 中，紅框圈起來的部分為每個 neuron 的 output
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/maxout-train.png" width="60%;" /></center>
-其实Max operation就是linear的operation，只是它仅接在前面这个group里的某一个element上，因此我们可以把那些并没有被Max连接到的element通通拿掉，从而得到一个比较细长的linear network
+其實Max operation就是linear的operation，只是它僅接在前面這個group里的某一個element上，因此我們可以把那些並沒有被Max連接到的element通通拿掉，從而得到一個比較細長的linear network
 
-实际上我们真正训练的并不是一个含有max函数的network，而是一个化简后如下图所示的linear network；当我们还没有真正开始训练模型的时候，此时这个network含有max函数无法微分，但是只要真的丢进去了一笔data，network就会马上根据这笔data确定具体的形状，此时max函数的问题已经被实际数据给解决了，所以我们完全可以根据这笔training data使用Backpropagation的方法去训练被network留下来的参数
+實際上我們真正訓練的並不是一個含有 max 函數的 network，而是一個化簡後如下圖所示的 linear network；當我們還沒有真正開始訓練模型的時候，此時這個 network 含有 max 函數無法微分，但是只要真的丟進去了一筆 data，network 就會馬上根據這筆 data 確定具體的形狀，此時 max 函數的問題已經被實際數據給解決了，所以我們完全可以根據這筆 training data 使用 Backpropagation 的方法去訓練被 network 留下來的參數
 
-所以我们担心的max函数无法微分，它只是理论上的问题；**在具体的实践上，我们完全可以先根据data把max函数转化为某个具体的函数，再对这个转化后的thiner linear network进行微分**
+所以我們擔心的 max 函數無法微分，它只是理論上的問題；**在具體的實踐上，我們完全可以先根據 data 把 max 函數轉化為某個具體的函數，再對這個轉化後的 thiner linear network 進行微分**
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/maxout-train2.png" width="60%;" /></center>
-这个时候你也许会有一个问题，如果按照上面的做法，那岂不是只会train留在network里面的那些参数，剩下的参数该怎么办？那些被拿掉的直线(weight)岂不是永远也train不到了吗？
+這個時候你也許會有一個問題，如果按照上面的做法，那豈不是只會train留在network裡面的那些參數，剩下的參數該怎麼辦？那些被拿掉的直線(weight)豈不是永遠也train不到了嗎？
 
-其实这也只是个理论上的问题，在实际操作上，我们之前已经提到过，每个linear network的structure都是由input的那一笔data来决定的，当你input不同data的时候，得到的network structure是不同的，留在network里面的参数也是不同的，**由于我们有很多很多笔training data，所以network的structure在训练中不断地变换，实际上最后每一个weight参数都会被train到**
+其實這也只是個理論上的問題，在實際操作上，我們之前已經提到過，每個 linear network 的 structure 都是由 input 的那一筆 data 來決定的，當你 input 不同 data 的時候，得到的 network structure 是不同的，留在 network 裡面的參數也是不同的，**由於我們有很多很多筆 training data，所以 network 的 structure 在訓練中不斷地變換，實際上最後每一個 weight 參數都會被 train 到**
 
-所以，我们回到Max Pooling的问题上来，由于Max Pooling跟Maxout是一模一样的operation，既然如何训练Maxout的问题可以被解决，那训练Max Pooling又有什么困难呢？
+所以，我們回到 Max Pooling 的問題上來，由於 Max Pooling 跟 Maxout 是一模一樣的 operation，既然如何訓練 Maxout 的問題可以被解決，那訓練 Max Pooling 又有什麼困難呢？
 
-**Max Pooling有关max函数的微分问题采用跟Maxout一样的方案即可解决**，至此我们已经解决了CNN部分的第一个问题
+**Max Pooling 有關 max 函數的微分問題採用跟 Maxout 一樣的方案即可解決**，至此我們已經解決了 CNN 部分的第一個問題
 
 #### Adaptive learning rate
 
-这个部分主要讲述的是关于Recipe of Deep Learning中Adaptive learning rate的一些理论
+這個部分主要講述的是關於 Recipe of Deep Learning 中 Adaptive learning rate 的一些理論
 
 ##### Review - Adagrad
 
-我们之前已经了解过Adagrad的做法，让每一个parameter都要有不同的learning rate
+我們之前已經瞭解過 Adagrad 的做法，讓每一個 parameter 都要有不同的 learning rate
 
-Adagrad的精神是，假设我们考虑两个参数$w_1,w_2$，如果在$w_1$这个方向上，平常的gradient都比较小，那它是比较平坦的，于是就给它比较大的learning rate；反过来说，在$w_2$这个方向上，平常gradient都比较大，那它是比较陡峭的，于是给它比较小的learning rate
+Adagrad 的精神是，假設我們考慮兩個參數$w_1,w_2$，如果在$w_1$這個方向上，平常的 gradient 都比較小，那它是比較平坦的，於是就給它比較大的 learning rate；反過來說，在$w_2$這個方向上，平常 gradient 都比較大，那它是比較陡峭的，於是給它比較小的 learning rate
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/review-adagrad.png" width="60%;" /></center>
-但我们实际面对的问题，很有可能远比Adagrad所能解决的问题要来的复杂，我们之前做Linear Regression的时候，我们做optimization的对象，也就是loss function，它是convex的形状；但实际上我们在做deep learning的时候，这个loss function可以是任何形状
+但我們實際面對的問題，很有可能遠比Adagrad所能解決的問題要來的複雜，我們之前做Linear Regression的時候，我們做optimization的對象，也就是loss function，它是convex的形狀；但實際上我們在做deep learning的時候，這個loss function可以是任何形狀
 
 ##### RMSProp
 
 ###### learning rate
 
-loss function可以是任何形状，对convex loss function来说，在每个方向上它会一直保持平坦或陡峭的状态，所以你只需要针对平坦的情况设置较大的learning rate，对陡峭的情况设置较小的learning rate即可
+loss function 可以是任何形狀，對 convex loss function 來說，在每個方向上它會一直保持平坦或陡峭的狀態，所以你只需要針對平坦的情況設置較大的 learning rate，對陡峭的情況設置較小的 learning rate 即可
 
-但是在下图所示的情况中，即使是在同一个方向上(如w1方向)，loss function也有可能一会儿平坦一会儿陡峭，所以你要随时根据gradient的大小来快速地调整learning rate
+但是在下圖所示的情況中，即使是在同一個方向上(如 w1 方向)，loss function 也有可能一會兒平坦一會兒陡峭，所以你要隨時根據 gradient 的大小來快速地調整 learning rate
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/rmsprop1.png" width="60%;" /></center>
-所以真正要处理deep learning的问题，用Adagrad可能是不够的，你需要更dynamic的调整learning rate的方法，所以产生了Adagrad的进阶版——**RMSProp**
+所以真正要處理deep learning的問題，用Adagrad可能是不夠的，你需要更dynamic的調整learning rate的方法，所以產生了Adagrad的進階版——**RMSProp**
 
-RMSprop还是一个蛮神奇的方法，因为它并不是在paper里提出来的，而是Hinton在mooc的course里面提出来的一个方法，所以需要cite(引用)的时候，要去cite Hinton的课程链接
+RMSprop 還是一個蠻神奇的方法，因為它並不是在 paper 里提出來的，而是 Hinton 在 mooc 的 course 裡面提出來的一個方法，所以需要 cite(引用)的時候，要去 cite Hinton 的課程鏈接
 
 ###### how to do RMSProp
 
-RMSProp的做法如下：
+RMSProp 的做法如下：
 
-我们的learning rate依旧设置为一个固定的值 $\eta$ 除掉一个变化的值 $\sigma$，这个$\sigma$等于上一个$\sigma$和当前梯度$g$的加权方均根（特别的是，在第一个时间点，$\sigma^0$就是第一个算出来的gradient值$g^0$），即：
+我們的 learning rate 依舊設置為一個固定的值 $\eta$ 除掉一個變化的值 $\sigma$，這個$\sigma$等於上一個$\sigma$和當前梯度$g$的加權方均根（特別的是，在第一個時間點，$\sigma^0$就是第一個算出來的 gradient 值$g^0$），即：
+
 $$
 w^{t+1}=w^t-\frac{\eta}{\sigma^t}g^t \\
 \sigma^t=\sqrt{\alpha(\sigma^{t-1})^2+(1-\alpha)(g^t)^2}
 $$
-这里的$\alpha$值是可以自由调整的，RMSProp跟Adagrad不同之处在于，Adagrad的分母是对过程中所有的gradient取平方和开根号，也就是说Adagrad考虑的是整个过程平均的gradient信息；而RMSProp虽然也是对所有的gradient进行平方和开根号，但是它**用一个$\alpha$来调整对不同gradient的使用程度**，比如你把α的值设的小一点，意思就是你更倾向于相信新的gradient所告诉你的error surface的平滑或陡峭程度，而比较无视于旧的gradient所提供给你的information
+
+這裡的$\alpha$值是可以自由調整的，RMSProp 跟 Adagrad 不同之處在於，Adagrad 的分母是對過程中所有的 gradient 取平方和開根號，也就是說 Adagrad 考慮的是整個過程平均的 gradient 信息；而 RMSProp 雖然也是對所有的 gradient 進行平方和開根號，但是它**用一個$\alpha$來調整對不同 gradient 的使用程度**，比如你把 α 的值設的小一點，意思就是你更傾向於相信新的 gradient 所告訴你的 error surface 的平滑或陡峭程度，而比較無視於舊的 gradient 所提供給你的 information
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/rmsprop2.png" width="60%;" /></center>
-所以当你做RMSProp的时候，一样是在算gradient的root mean square，但是你可以给现在已经看到的gradient比较大的weight，给过去看到的gradient比较小的weight，来调整对gradient信息的使用程度
+所以當你做RMSProp的時候，一樣是在算gradient的root mean square，但是你可以給現在已經看到的gradient比較大的weight，給過去看到的gradient比較小的weight，來調整對gradient信息的使用程度
 
 ##### Momentum
 
 ###### optimization - local minima？
 
-除了learning rate的问题以外，在做deep learning的时候，也会出现卡在local minimum、saddle point或是plateau的地方，很多人都会担心，deep learning这么复杂的model，可能非常容易就会被卡住了
+除了 learning rate 的問題以外，在做 deep learning 的時候，也會出現卡在 local minimum、saddle point 或是 plateau 的地方，很多人都會擔心，deep learning 這麼複雜的 model，可能非常容易就會被卡住了
 
-但其实Yann LeCun在07年的时候，就提出了一个蛮特别的说法，他说你不要太担心local minima的问题，因为一旦出现local minima，它就必须在每一个dimension都是下图中这种山谷的低谷形状，假设山谷的低谷出现的概率为p，由于我们的network有非常非常多的参数，这里假设有1000个参数，每一个参数都要位于山谷的低谷之处，这件事发生的概率为$p^{1000}$，当你的network越复杂，参数越多，这件事发生的概率就越低
+但其實 Yann LeCun 在 07 年的時候，就提出了一個蠻特別的說法，他說你不要太擔心 local minima 的問題，因為一旦出現 local minima，它就必須在每一個 dimension 都是下圖中這種山谷的低谷形狀，假設山谷的低谷出現的概率為 p，由於我們的 network 有非常非常多的參數，這裡假設有 1000 個參數，每一個參數都要位於山谷的低谷之處，這件事發生的概率為$p^{1000}$，當你的 network 越複雜，參數越多，這件事發生的概率就越低
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/optimal1.png" width="60%;" /></center>
-所以在一个很大的neural network里面，其实并没有那么多的local minima，搞不好它看起来其实是很平滑的，所以当你走到一个你觉得是local minima的地方被卡住了，那它八成就是global minima，或者是很接近global minima的地方
+所以在一個很大的neural network裡面，其實並沒有那麼多的local minima，搞不好它看起來其實是很平滑的，所以當你走到一個你覺得是local minima的地方被卡住了，那它八成就是global minima，或者是很接近global minima的地方
 
 ###### where is Momentum from
 
-有一个heuristic(启发性)的方法可以稍微处理一下上面所说的“卡住”的问题，它的灵感来自于真实世界
+有一個 heuristic(啓發性)的方法可以稍微處理一下上面所說的「卡住」的問題，它的靈感來自於真實世界
 
-假设在有一个球从左上角滚下来，它会滚到plateau的地方、local minima的地方，但是由于惯性它还会继续往前走一段路程，假设前面的坡没有很陡，这个球就很有可能翻过山坡，走到比local minima还要好的地方
+假設在有一個球從左上角滾下來，它會滾到 plateau 的地方、local minima 的地方，但是由於慣性它還會繼續往前走一段路程，假設前面的坡沒有很陡，這個球就很有可能翻過山坡，走到比 local minima 還要好的地方
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/physical.png" width="60%;" /></center>
-所以我们要做的，就是把**惯性**塞到gradient descent里面，这件事情就叫做**Momentum**
+所以我們要做的，就是把**慣性**塞到gradient descent裡面，這件事情就叫做**Momentum**
 
 ###### how to do Momentum
 
-当我们在gradient descent里加上Momentum的时候，每一次update的方向，不再只考虑gradient的方向，还要考虑上一次update的方向，那这里我们就用一个变量$v$去记录前一个时间点update的方向
+當我們在 gradient descent 里加上 Momentum 的時候，每一次 update 的方向，不再只考慮 gradient 的方向，還要考慮上一次 update 的方向，那這裡我們就用一個變量$v$去記錄前一個時間點 update 的方向
 
-随机选一个初始值$\theta^0$，初始化$v^0=0$，接下来计算$\theta^0$处的gradient，然后我们要移动的方向是由前一个时间点的移动方向$v^0$和gradient的反方向$\nabla L(\theta^0)$来决定的，即
+隨機選一個初始值$\theta^0$，初始化$v^0=0$，接下來計算$\theta^0$處的 gradient，然後我們要移動的方向是由前一個時間點的移動方向$v^0$和 gradient 的反方向$\nabla L(\theta^0)$來決定的，即
+
 $$
 v^1=\lambda v^0-\eta \nabla L(\theta^0)
 $$
-注：这里的$\lambda$也是一个手动调整的参数，它表示惯性对前进方向的影响有多大
 
-接下来我们第二个时间点要走的方向$v^2$，它是由第一个时间点移动的方向$v^1$和gradient的反方向$\nabla L(\theta^1)$共同决定的；$\lambda v$是图中的绿色虚线，它代表由于上一次的惯性想要继续走的方向；$\eta \nabla L(\theta)$是图中的红色虚线，它代表这次gradient告诉你所要移动的方向；它们的矢量和就是这一次真实移动的方向，为蓝色实线
+注：這裡的$\lambda$也是一個手動調整的參數，它表示慣性對前進方向的影響有多大
+
+接下來我們第二個時間點要走的方向$v^2$，它是由第一個時間點移動的方向$v^1$和 gradient 的反方向$\nabla L(\theta^1)$共同決定的；$\lambda v$是圖中的綠色虛線，它代表由於上一次的慣性想要繼續走的方向；$\eta \nabla L(\theta)$是圖中的紅色虛線，它代表這次 gradient 告訴你所要移動的方向；它們的矢量和就是這一次真實移動的方向，為藍色實線
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/momentum1.png" width="60%;" /></center>
-gradient告诉我们走红色虚线的方向，惯性告诉我们走绿色虚线的方向，合起来就是走蓝色的方向
+gradient告訴我們走紅色虛線的方向，慣性告訴我們走綠色虛線的方向，合起來就是走藍色的方向
 
-我们还可以用另一种方法来理解Momentum这件事，其实你在每一个时间点移动的步伐$v^i$，包括大小和方向，就是过去所有gradient的加权和
+我們還可以用另一種方法來理解 Momentum 這件事，其實你在每一個時間點移動的步伐$v^i$，包括大小和方向，就是過去所有 gradient 的加權和
 
-具体推导如下图所示，第一个时间点移动的步伐$v^1$是$\theta^0$处的gradient加权，第二个时间点移动的步伐$v^2$是$\theta^0$和$\theta^1$处的gradient加权和...以此类推；由于$\lambda$的值小于1，因此该加权意味着越是之前的gradient，它的权重就越小，也就是说，你更在意的是现在的gradient，但是过去的所有gradient也要对你现在update的方向有一定程度的影响力，这就是Momentum
+具體推導如下圖所示，第一個時間點移動的步伐$v^1$是$\theta^0$處的 gradient 加權，第二個時間點移動的步伐$v^2$是$\theta^0$和$\theta^1$處的 gradient 加權和...以此類推；由於$\lambda$的值小於 1，因此該加權意味著越是之前的 gradient，它的權重就越小，也就是說，你更在意的是現在的 gradient，但是過去的所有 gradient 也要對你現在 update 的方向有一定程度的影響力，這就是 Momentum
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/momentum2.png" width="60%;" /></center>
-如果你对数学公式不太喜欢的话，那我们就从直觉上来看一下加入Momentum之后是怎么运作的
+如果你對數學公式不太喜歡的話，那我們就從直覺上來看一下加入Momentum之後是怎麼運作的
 
-在加入Momentum以后，每一次移动的方向，就是negative的gradient加上Momentum建议我们要走的方向，Momentum其实就是上一个时间点的movement
+在加入 Momentum 以後，每一次移動的方向，就是 negative 的 gradient 加上 Momentum 建議我們要走的方向，Momentum 其實就是上一個時間點的 movement
 
-下图中，红色实线是gradient建议我们走的方向，直观上看就是根据坡度要走的方向；绿色虚线是Momentum建议我们走的方向，实际上就是上一次移动的方向；蓝色实线则是最终真正走的方向
+下圖中，紅色實線是 gradient 建議我們走的方向，直觀上看就是根據坡度要走的方向；綠色虛線是 Momentum 建議我們走的方向，實際上就是上一次移動的方向；藍色實線則是最終真正走的方向
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/momentum3.png" width="60%;" /></center>
-如果我们今天走到local minimum的地方，此时gradient是0，红色箭头没有指向，它就会告诉你就停在这里吧，但是Momentum也就是绿色箭头，它指向右侧就是告诉你之前是要走向右边的，所以你仍然应该要继续往右走，所以最后你参数update的方向仍然会继续向右；你甚至可以期待Momentum比较强，惯性的力量可以支撑着你走出这个谷底，去到loss更低的地方
+如果我們今天走到local minimum的地方，此時gradient是0，紅色箭頭沒有指向，它就會告訴你就停在這裡吧，但是Momentum也就是綠色箭頭，它指向右側就是告訴你之前是要走向右邊的，所以你仍然應該要繼續往右走，所以最後你參數update的方向仍然會繼續向右；你甚至可以期待Momentum比較強，慣性的力量可以支撐著你走出這個谷底，去到loss更低的地方
 
 ##### Adam
 
-其实**RMSProp加上Momentum，就可以得到Adam**
+其實**RMSProp 加上 Momentum，就可以得到 Adam**
 
-根据下面的paper来快速描述一下Adam的algorithm：
+根據下面的 paper 來快速描述一下 Adam 的 algorithm：
 
-- 先初始化$m_0=0$，$m_0$就是Momentum中，前一个时间点的movement
+- 先初始化$m_0=0$，$m_0$就是 Momentum 中，前一個時間點的 movement
 
-    再初始化$v_0=0$，$v_0$就是RMSProp里计算gradient的root mean square的$\sigma$
+  再初始化$v_0=0$，$v_0$就是 RMSProp 里計算 gradient 的 root mean square 的$\sigma$
 
-    最后初始化$t=0$，t用来表示时间点
+  最後初始化$t=0$，t 用來表示時間點
 
-- 先算出gradient $g_t$
-    $$
-    g_t=\nabla _{\theta}f_t(\theta_{t-1})
-    $$
+- 先算出 gradient $g_t$
 
-- 再根据过去要走的方向$m_{t-1}$和gradient $g_t$，算出现在要走的方向 $m_t$——Momentum
-    $$
-    m_t=\beta_1 m_{t-1}+(1-\beta_1) g_t
-    $$
+  $$
+  g_t=\nabla _{\theta}f_t(\theta_{t-1})
+  $$
 
-- 然后根据前一个时间点的$v_{t-1}$和gradient $g_t$的平方，算一下放在分母的$v_t$——RMSProp
-    $$
-    v_t=\beta_2 v_{t-1}+(1-\beta_2) g_t^2
-    $$
+- 再根據過去要走的方向$m_{t-1}$和 gradient $g_t$，算出現在要走的方向 $m_t$——Momentum
 
-- 接下来做了一个原来RMSProp和Momentum里没有的东西，就是bias correction，它使$m_t$和$v_t$都除上一个值，这个值本来比较小，后来会越来越接近于1 (原理详见paper)
-    $$
-    \hat{m}_t=\frac{m_t}{1-\beta_1^t} \\ \hat{v}_t=\frac{v_t}{1-\beta_2^t}
-    $$
+  $$
+  m_t=\beta_1 m_{t-1}+(1-\beta_1) g_t
+  $$
 
-- 最后做update，把Momentum建议你的方向$\hat{m_t}$乘上learning rate $\alpha$，再除掉RMSProp normalize后建议的learning rate分母，然后得到update的方向
-    $$
-    \theta_t=\theta_{t-1}-\frac{\alpha \cdot \hat{m}_t}{\sqrt{\hat{v}_t}+\epsilon}
-    $$
+- 然後根據前一個時間點的$v_{t-1}$和 gradient $g_t$的平方，算一下放在分母的$v_t$——RMSProp
+
+  $$
+  v_t=\beta_2 v_{t-1}+(1-\beta_2) g_t^2
+  $$
+
+- 接下來做了一個原來 RMSProp 和 Momentum 里沒有的東西，就是 bias correction，它使$m_t$和$v_t$都除上一個值，這個值本來比較小，後來會越來越接近於 1 (原理詳見 paper)
+
+  $$
+  \hat{m}_t=\frac{m_t}{1-\beta_1^t} \\ \hat{v}_t=\frac{v_t}{1-\beta_2^t}
+  $$
+
+- 最後做 update，把 Momentum 建議你的方向$\hat{m_t}$乘上 learning rate $\alpha$，再除掉 RMSProp normalize 後建議的 learning rate 分母，然後得到 update 的方向
+  $$
+  \theta_t=\theta_{t-1}-\frac{\alpha \cdot \hat{m}_t}{\sqrt{\hat{v}_t}+\epsilon}
+  $$
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/adam.png" width="80%;" /></center>
 ### Good Results on Testing Data？
 
-这一部分主要讲述如何在Testing data上得到更好的performance，分为三个模块，Early Stopping、Regularization和Dropout
+這一部分主要講述如何在 Testing data 上得到更好的 performance，分為三個模塊，Early Stopping、Regularization 和 Dropout
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/result-test.png" width="60%;" /></center>
-值得注意的是，Early Stopping和Regularization是很typical的做法，它们不是特别为deep learning所设计的；而Dropout是一个蛮有deep learning特色的做法
+值得注意的是，Early Stopping和Regularization是很typical的做法，它們不是特別為deep learning所設計的；而Dropout是一個蠻有deep learning特色的做法
 
 #### Early Stopping
 
-假设你今天的learning rate调的比较好，那随着训练的进行，total loss通常会越来越小，但是Training set和Testing set的情况并不是完全一样的，很有可能当你在Training set上的loss逐渐减小的时候，在Testing set上的loss反而上升了
+假設你今天的 learning rate 調的比較好，那隨著訓練的進行，total loss 通常會越來越小，但是 Training set 和 Testing set 的情況並不是完全一樣的，很有可能當你在 Training set 上的 loss 逐漸減小的時候，在 Testing set 上的 loss 反而上升了
 
-所以，理想上假如你知道testing data上的loss变化情况，你会在testing set的loss最小的时候停下来，而不是在training set的loss最小的时候停下来；但testing set实际上是未知的东西，所以我们需要用validation set来替代它去做这件事情
+所以，理想上假如你知道 testing data 上的 loss 變化情況，你會在 testing set 的 loss 最小的時候停下來，而不是在 training set 的 loss 最小的時候停下來；但 testing set 實際上是未知的東西，所以我們需要用 validation set 來替代它去做這件事情
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/early-stop.png" width="60%;" /></center>
-注：很多时候，我们所讲的“testing set”并不是指代那个未知的数据集，而是一些已知的被你拿来做测试之用的数据集，比如kaggle上的public set，或者是你自己切出来的validation set
+注：很多時候，我們所講的「testing set」並不是指代那個未知的數據集，而是一些已知的被你拿來做測試之用的數據集，比如kaggle上的public set，或者是你自己切出來的validation set
 
 #### Regularization
 
-regularization就是在原来的loss function上额外增加几个term，比如我们要minimize的loss function原先应该是square error或cross entropy，那在做Regularization的时候，就在后面加一个Regularization的term
+regularization 就是在原來的 loss function 上額外增加幾個 term，比如我們要 minimize 的 loss function 原先應該是 square error 或 cross entropy，那在做 Regularization 的時候，就在後面加一個 Regularization 的 term
 
 ##### L2 regularization
 
-regularization term可以是参数的L2 norm(L2正规化)，所谓的L2 norm，就是把model参数集$\theta$里的每一个参数都取平方然后求和，这件事被称作L2 regularization，即
+regularization term 可以是參數的 L2 norm(L2 正規化)，所謂的 L2 norm，就是把 model 參數集$\theta$里的每一個參數都取平方然後求和，這件事被稱作 L2 regularization，即
+
 $$
 L2 \ regularization:||\theta||_2=(w_1)^2+(w_2)^2+...
 $$
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/regularization1.png" width="60%;" /></center>
-通常我们在做regularization的时候，新加的term里是不会考虑bias这一项的，因为加regularization的目的是为了让我们的function更平滑，而bias通常是跟function的平滑程度没有关系的
+通常我們在做regularization的時候，新加的term里是不會考慮bias這一項的，因為加regularization的目的是為了讓我們的function更平滑，而bias通常是跟function的平滑程度沒有關係的
 
-你会发现我们新加的regularization term $\lambda \frac{1}{2}||\theta||_2$里有一个$\frac{1}{2}$，由于我们是要对loss function求微分的，而新加的regularization term是参数$w_i$的平方和，对平方求微分会多出来一个系数2，我们的$\frac{1}{2}$就是用来和这个2相消的
+你會發現我們新加的 regularization term $\lambda \frac{1}{2}||\theta||_2$里有一個$\frac{1}{2}$，由於我們是要對 loss function 求微分的，而新加的 regularization term 是參數$w_i$的平方和，對平方求微分會多出來一個系數 2，我們的$\frac{1}{2}$就是用來和這個 2 相消的
 
-L2 regularization具体工作流程如下：
+L2 regularization 具體工作流程如下：
 
-- 我们加上regularization term之后得到了一个新的loss function：$L'(\theta)=L(\theta)+\lambda \frac{1}{2}||\theta||_2$
-- 将这个loss function对参数$w_i$求微分：$\frac{\partial L'}{\partial w_i}=\frac{\partial L}{\partial w_i}+\lambda w_i$
-- 然后update参数$w_i$：$w_i^{t+1}=w_i^t-\eta \frac{\partial L'}{\partial w_i}=w_i^t-\eta(\frac{\partial L}{\partial w_i}+\lambda w_i^t)=(1-\eta \lambda)w_i^t-\eta \frac{\partial L}{\partial w_i}$
+- 我們加上 regularization term 之後得到了一個新的 loss function：$L'(\theta)=L(\theta)+\lambda \frac{1}{2}||\theta||_2$
+- 將這個 loss function 對參數$w_i$求微分：$\frac{\partial L'}{\partial w_i}=\frac{\partial L}{\partial w_i}+\lambda w_i$
+- 然後 update 參數$w_i$：$w_i^{t+1}=w_i^t-\eta \frac{\partial L'}{\partial w_i}=w_i^t-\eta(\frac{\partial L}{\partial w_i}+\lambda w_i^t)=(1-\eta \lambda)w_i^t-\eta \frac{\partial L}{\partial w_i}$
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/regularization2.png" width="60%;" /></center>
-如果把这个推导出来的式子和原式作比较，你会发现参数$w_i$在每次update之前，都会乘上一个$(1-\eta \lambda)$，而$\eta$和$\lambda$通常会被设为一个很小的值，因此$(1-\eta \lambda)$通常是一个接近于1的值，比如0.99,；也就是说，regularization做的事情是，每次update参数$w_i$之前，不分青红皂白就先对原来的$w_i$乘个0.99，这意味着，随着update次数增加，参数$w_i$会越来越接近于0
+如果把這個推導出來的式子和原式作比較，你會發現參數$w_i$在每次update之前，都會乘上一個$(1-\eta \lambda)$，而$\eta$和$\lambda$通常會被設為一個很小的值，因此$(1-\eta \lambda)$通常是一個接近於1的值，比如0.99,；也就是說，regularization做的事情是，每次update參數$w_i$之前，不分青紅皂白就先對原來的$w_i$乘個0.99，這意味著，隨著update次數增加，參數$w_i$會越來越接近於0
 
-Q：你可能会问，要是所有的参数都越来越靠近0，那最后岂不是$w_i$通通变成0，得到的network还有什么用？
+Q：你可能會問，要是所有的參數都越來越靠近 0，那最後豈不是$w_i$通通變成 0，得到的 network 還有什麼用？
 
-A：其实不会出现最后所有参数都变为0的情况，因为通过微分得到的$\eta \frac{\partial L}{\partial w_i}$这一项是会和前面$(1-\eta \lambda)w_i^t$这一项最后取得平衡的
+A：其實不會出現最後所有參數都變為 0 的情況，因為通過微分得到的$\eta \frac{\partial L}{\partial w_i}$這一項是會和前面$(1-\eta \lambda)w_i^t$這一項最後取得平衡的
 
-使用L2 regularization可以让weight每次都变得更小一点，这就叫做**Weight Decay**(权重衰减)
+使用 L2 regularization 可以讓 weight 每次都變得更小一點，這就叫做**Weight Decay**(權重衰減)
 
 ##### L1 regularization
 
-除了L2 regularization中使用平方项作为new term之外，还可以使用L1 regularization，把平方项换成每一个参数的绝对值，即
+除了 L2 regularization 中使用平方項作為 new term 之外，還可以使用 L1 regularization，把平方項換成每一個參數的絕對值，即
+
 $$
 ||\theta||_1=|w_1|+|w_2|+...
 $$
-Q：你的第一个问题可能会是，绝对值不能微分啊，该怎么处理呢？
 
-A：实际上绝对值就是一个V字形的函数，在V的左边微分值是-1，在V的右边微分值是1，只有在0的地方是不能微分的，那真的走到0的时候就胡乱给它一个值，比如0，就ok了
+Q：你的第一個問題可能會是，絕對值不能微分啊，該怎麼處理呢？
 
-如果w是正的，那微分出来就是+1，如果w是负的，那微分出来就是-1，所以这边写了一个w的sign function，它的意思是说，如果w是正数的话，这个function output就是+1，w是负数的话，这个function output就是-1
+A：實際上絕對值就是一個 V 字形的函數，在 V 的左邊微分值是-1，在 V 的右邊微分值是 1，只有在 0 的地方是不能微分的，那真的走到 0 的時候就胡亂給它一個值，比如 0，就 ok 了
 
-L1 regularization的工作流程如下：
+如果 w 是正的，那微分出來就是+1，如果 w 是負的，那微分出來就是-1，所以這邊寫了一個 w 的 sign function，它的意思是說，如果 w 是正數的話，這個 function output 就是+1，w 是負數的話，這個 function output 就是-1
 
-- 我们加上regularization term之后得到了一个新的loss function：$L'(\theta)=L(\theta)+\lambda \frac{1}{2}||\theta||_1$
-- 将这个loss function对参数$w_i$求微分：$\frac{\partial L'}{\partial w_i}=\frac{\partial L}{\partial w_i}+\lambda \ sgn(w_i)$
-- 然后update参数$w_i$：$w_i^{t+1}=w_i^t-\eta \frac{\partial L'}{\partial w_i}=w_i^t-\eta(\frac{\partial L}{\partial w_i}+\lambda \ sgn(w_i^t))=w_i^t-\eta \frac{\partial L}{\partial w_i}-\eta \lambda \ sgn(w_i^t)$
+L1 regularization 的工作流程如下：
+
+- 我們加上 regularization term 之後得到了一個新的 loss function：$L'(\theta)=L(\theta)+\lambda \frac{1}{2}||\theta||_1$
+- 將這個 loss function 對參數$w_i$求微分：$\frac{\partial L'}{\partial w_i}=\frac{\partial L}{\partial w_i}+\lambda \ sgn(w_i)$
+- 然後 update 參數$w_i$：$w_i^{t+1}=w_i^t-\eta \frac{\partial L'}{\partial w_i}=w_i^t-\eta(\frac{\partial L}{\partial w_i}+\lambda \ sgn(w_i^t))=w_i^t-\eta \frac{\partial L}{\partial w_i}-\eta \lambda \ sgn(w_i^t)$
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/regularization3.png" width="60%;" /></center>
-这个式子告诉我们，每次update的时候，不管三七二十一都要减去一个$\eta \lambda \ sgn(w_i^t)$，如果w是正的，sgn是+1，就会变成减一个positive的值让你的参数变小；如果w是负的，sgn是-1，就会变成加一个值让你的参数变大；总之就是让它们的绝对值减小至接近于0
+這個式子告訴我們，每次update的時候，不管三七二十一都要減去一個$\eta \lambda \ sgn(w_i^t)$，如果w是正的，sgn是+1，就會變成減一個positive的值讓你的參數變小；如果w是負的，sgn是-1，就會變成加一個值讓你的參數變大；總之就是讓它們的絕對值減小至接近於0
 
 ##### L1 V.s. L2
 
-我们来对比一下L1和L2的update过程：
+我們來對比一下 L1 和 L2 的 update 過程：
+
 $$
 L1: w_i^{t+1}=w_i^t-\eta \frac{\partial L}{\partial w_i}-\eta \lambda \ sgn(w_i^t)\\
 L2: w_i^{t+1}=(1-\eta \lambda)w_i^t-\eta \frac{\partial L}{\partial w_i}
 $$
-L1和L2，虽然它们同样是让参数的绝对值变小，但它们做的事情其实略有不同：
 
-- L1使参数绝对值变小的方式是每次update**减掉一个固定的值**
-- L2使参数绝对值变小的方式是每次update**乘上一个小于1的固定值**
+L1 和 L2，雖然它們同樣是讓參數的絕對值變小，但它們做的事情其實略有不同：
 
-因此，当参数w的绝对值比较大的时候，L2会让w下降得更快，而L1每次update只让w减去一个固定的值，train完以后可能还会有很多比较大的参数；当参数w的绝对值比较小的时候，L2的下降速度就会变得很慢，train出来的参数平均都是比较小的，而L1每次下降一个固定的value，train出来的参数是比较sparse的，这些参数有很多是接近0的值，也会有很大的值
+- L1 使參數絕對值變小的方式是每次 update**減掉一個固定的值**
+- L2 使參數絕對值變小的方式是每次 update**乘上一個小於 1 的固定值**
 
-在之前所讲的CNN的task里，用L1做出来的效果是比较合适的，是比较sparse的
+因此，當參數 w 的絕對值比較大的時候，L2 會讓 w 下降得更快，而 L1 每次 update 只讓 w 減去一個固定的值，train 完以後可能還會有很多比較大的參數；當參數 w 的絕對值比較小的時候，L2 的下降速度就會變得很慢，train 出來的參數平均都是比較小的，而 L1 每次下降一個固定的 value，train 出來的參數是比較 sparse 的，這些參數有很多是接近 0 的值，也會有很大的值
+
+在之前所講的 CNN 的 task 里，用 L1 做出來的效果是比較合適的，是比較 sparse 的
 
 ##### Weight Decay
 
-之前提到了Weight Decay，那实际上我们在人脑里面也会做Weight Decay
+之前提到了 Weight Decay，那實際上我們在人腦裡面也會做 Weight Decay
 
-下图分别描述了，刚出生的时候，婴儿的神经是比较稀疏的；6岁的时候，就会有很多很多的神经；但是到14岁的时候，神经间的连接又减少了，所以neural network也会跟我们人有一些很类似的事情，如果有一些weight你都没有去update它，那它每次都会越来越小，最后就接近0然后不见了
+下圖分別描述了，剛出生的時候，嬰兒的神經是比較稀疏的；6 歲的時候，就會有很多很多的神經；但是到 14 歲的時候，神經間的連接又減少了，所以 neural network 也會跟我們人有一些很類似的事情，如果有一些 weight 你都沒有去 update 它，那它每次都會越來越小，最後就接近 0 然後不見了
 
-这跟人脑的运作，是有异曲同工之妙
+這跟人腦的運作，是有異曲同工之妙
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/regularization4.png" width="60%;" /></center>
 #### some tips
 
-ps：在deep learning里面，regularization虽然有帮助，但它的重要性往往没有SVM这类方法来得高，因为我们在做neural network的时候，通常都是从一个很小的、接近于0的值开始初始参数的，而做update的时候，通常都是让参数离0越来越远，但是regularization要达到的目的，就是希望我们的参数不要离0太远
+ps：在 deep learning 裡面，regularization 雖然有幫助，但它的重要性往往沒有 SVM 這類方法來得高，因為我們在做 neural network 的時候，通常都是從一個很小的、接近於 0 的值開始初始參數的，而做 update 的時候，通常都是讓參數離 0 越來越遠，但是 regularization 要達到的目的，就是希望我們的參數不要離 0 太遠
 
-如果你做的是Early Stopping，它会减少update的次数，其实也会避免你的参数离0太远，这跟regularization做的事情是很接近的
+如果你做的是 Early Stopping，它會減少 update 的次數，其實也會避免你的參數離 0 太遠，這跟 regularization 做的事情是很接近的
 
-所以在neural network里面，regularization的作用并没有SVM来的重要，SVM其实是explicitly把regularization这件事情写在了它的objective function(目标函数)里面，SVM是要去解一个convex optimization problem，因此它解的时候不一定会有iteration的过程，它不会有Early Stopping这件事，而是一步就可以走到那个最好的结果了，所以你没有办法用Early Stopping防止它离目标太远，你必须要把regularization explicitly加到你的loss function里面去
+所以在 neural network 裡面，regularization 的作用並沒有 SVM 來的重要，SVM 其實是 explicitly 把 regularization 這件事情寫在了它的 objective function(目標函數)裡面，SVM 是要去解一個 convex optimization problem，因此它解的時候不一定會有 iteration 的過程，它不會有 Early Stopping 這件事，而是一步就可以走到那個最好的結果了，所以你沒有辦法用 Early Stopping 防止它離目標太遠，你必須要把 regularization explicitly 加到你的 loss function 裡面去
 
 #### Dropout
 
-这里先讲dropout是怎么做的，然后再来解释为什么这样做
+這裡先講 dropout 是怎麼做的，然後再來解釋為什麼這樣做
 
 ##### How to do Dropout
 
-Dropout是怎么做的呢？
+Dropout 是怎麼做的呢？
 
 ###### Training
 
-在training的时候，每次update参数之前，我们对每一个neuron(也包括input layer的“neuron”)做sampling(抽样) ，每个neuron都有p%的几率会被丢掉，如果某个neuron被丢掉的话，跟它相连的weight也都要被丢掉
+在 training 的時候，每次 update 參數之前，我們對每一個 neuron(也包括 input layer 的「neuron」)做 sampling(抽樣) ，每個 neuron 都有 p%的幾率會被丟掉，如果某個 neuron 被丟掉的話，跟它相連的 weight 也都要被丟掉
 
-实际上就是每次update参数之前都通过抽样只保留network中的一部分neuron来做训练
+實際上就是每次 update 參數之前都通過抽樣只保留 network 中的一部分 neuron 來做訓練
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/dropout1.png" width="60%;" /></center>
-做完sampling以后，network structure就会变得比较细长了，然后你再去train这个细长的network
+做完sampling以後，network structure就會變得比較細長了，然後你再去train這個細長的network
 
-注：每次update参数之前都要做一遍sampling，所以每次update参数的时候，拿来training的network structure都是不一样的；你可能会觉得这个方法跟前面提到的Maxout会有一点像，但实际上，Maxout是每一笔data对应的network structure不同，而Dropout是每一次update的network structure都是不同的(每一个minibatch对应着一次update，而一个minibatch里含有很多笔data)
+注：每次 update 參數之前都要做一遍 sampling，所以每次 update 參數的時候，拿來 training 的 network structure 都是不一樣的；你可能會覺得這個方法跟前面提到的 Maxout 會有一點像，但實際上，Maxout 是每一筆 data 對應的 network structure 不同，而 Dropout 是每一次 update 的 network structure 都是不同的(每一個 minibatch 對應著一次 update，而一個 minibatch 里含有很多筆 data)
 
-当你在training的时候使用dropout，得到的performance其实是会变差的，因为某些neuron在training的时候莫名其妙就会消失不见，但这并不是问题，因为：
+當你在 training 的時候使用 dropout，得到的 performance 其實是會變差的，因為某些 neuron 在 training 的時候莫名其妙就會消失不見，但這並不是問題，因為：
 
-==**Dropout真正要做的事情，就是要让你在training set上的结果变差，但是在testing set上的结果是变好的**==
+==**Dropout 真正要做的事情，就是要讓你在 training set 上的結果變差，但是在 testing set 上的結果是變好的**==
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/dropout2.png" width="60%;" /></center>
-所以如果你今天遇到的问题是在training set上得到的performance不够好，你再加dropout，就只会越做越差；这告诉我们，不同的problem需要用不同的方法去解决，而不是胡乱使用，dropout就是针对testing set的方法，当然不能够拿来解决training set上的问题啦！
+所以如果你今天遇到的問題是在training set上得到的performance不夠好，你再加dropout，就只會越做越差；這告訴我們，不同的problem需要用不同的方法去解決，而不是胡亂使用，dropout就是針對testing set的方法，當然不能夠拿來解決training set上的問題啦！
 
 ###### Testing
 
-在使用dropout方法做testing的时候要注意两件事情：
+在使用 dropout 方法做 testing 的時候要注意兩件事情：
 
-- testing的时候不做dropout，所有的neuron都要被用到
-- 假设在training的时候，dropout rate是p%，从training data中被learn出来的所有weight都要乘上(1-p%)才能被当做testing的weight使用
+- testing 的時候不做 dropout，所有的 neuron 都要被用到
+- 假設在 training 的時候，dropout rate 是 p%，從 training data 中被 learn 出來的所有 weight 都要乘上(1-p%)才能被當做 testing 的 weight 使用
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/dropout3.png" width="60%;" /></center>
 ##### Why Dropout？
 
-###### 为什么dropout会有用？
+###### 為什麼 dropout 會有用？
 
-直接的想法是这样子：
+直接的想法是這樣子：
 
-在training的时候，会丢掉一些neuron，就好像是你要练轻功的时候，会在脚上绑一些重物；然后，你在实际战斗的时候，就是实际testing的时候，是没有dropout的，就相当于把重物拿下来，所以你就会变得很强
+在 training 的時候，會丟掉一些 neuron，就好像是你要練輕功的時候，會在腳上綁一些重物；然後，你在實際戰鬥的時候，就是實際 testing 的時候，是沒有 dropout 的，就相當於把重物拿下來，所以你就會變得很強
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/dropout4.png" width="60%;" /></center>
-另一个直觉的理由是这样，neural network里面的每一个neuron就是一个学生，那大家被连接在一起就是大家听到说要组队做final project，那在一个团队里总是有人会拖后腿，就是他会dropout，所以假设你觉得自己的队友会dropout，这个时候你就会想要好好做，然后去carry这个队友，这就是training的过程
+另一個直覺的理由是這樣，neural network裡面的每一個neuron就是一個學生，那大家被連接在一起就是大家聽到說要組隊做final project，那在一個團隊裡總是有人會拖後腿，就是他會dropout，所以假設你覺得自己的隊友會dropout，這個時候你就會想要好好做，然後去carry這個隊友，這就是training的過程
 
-那实际在testing的时候，其实大家都有好好做，没有人需要被carry，由于每个人都比一般情况下更努力，所以得到的结果会是更好的，这也就是testing的时候不做dropout的原因
+那實際在 testing 的時候，其實大家都有好好做，沒有人需要被 carry，由於每個人都比一般情況下更努力，所以得到的結果會是更好的，這也就是 testing 的時候不做 dropout 的原因
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/dropout5.png" width="60%;" /></center>
-###### 为什么training和testing使用的weight是不一样的呢？
+###### 為什麼training和testing使用的weight是不一樣的呢？
 
-直觉的解释是这样的：
+直覺的解釋是這樣的：
 
-假设现在的dropout rate是50%，那在training的时候，你总是期望每次update之前会丢掉一半的neuron，就像下图左侧所示，在这种情况下你learn好了一组weight参数，然后拿去testing
+假設現在的 dropout rate 是 50%，那在 training 的時候，你總是期望每次 update 之前會丟掉一半的 neuron，就像下圖左側所示，在這種情況下你 learn 好了一組 weight 參數，然後拿去 testing
 
-但是在testing的时候是没有dropout的，所以如果testing使用的是和training同一组weight，那左侧得到的output z和右侧得到的output z‘，它们的值其实是会相差两倍的，即$z'≈2z$，这样会造成testing的结果与training的结果并不match，最终的performance反而会变差
+但是在 testing 的時候是沒有 dropout 的，所以如果 testing 使用的是和 training 同一組 weight，那左側得到的 output z 和右側得到的 output z‘，它們的值其實是會相差兩倍的，即$z'≈2z$，這樣會造成 testing 的結果與 training 的結果並不 match，最終的 performance 反而會變差
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/dropout6.png" width="60%;" /></center>
-那这个时候，你就需要把右侧testing中所有的weight乘上0.5，然后做normalization，这样z就会等于z'，使得testing的结果与training的结果是比较match的
+那這個時候，你就需要把右側testing中所有的weight乘上0.5，然後做normalization，這樣z就會等於z'，使得testing的結果與training的結果是比較match的
 
 ##### Dropout is a kind of ensemble
 
-在文献上有很多不同的观点来解释为什么dropout会work，其中一种比较令人信服的解释是：**dropout是一种终极的ensemble的方法**
+在文獻上有很多不同的觀點來解釋為什麼 dropout 會 work，其中一種比較令人信服的解釋是：**dropout 是一種終極的 ensemble 的方法**
 
-###### ensemble精神的解释
+###### ensemble 精神的解釋
 
-ensemble的方法在比赛的时候经常用得到，它的意思是说，我们有一个很大的training set，那你每次都只从这个training set里面sample一部分的data出来，像下图一样，抽取了set1,set2,set3,set4
+ensemble 的方法在比賽的時候經常用得到，它的意思是說，我們有一個很大的 training set，那你每次都只從這個 training set 裡面 sample 一部分的 data 出來，像下圖一樣，抽取了 set1,set2,set3,set4
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/dropout7.png" width="60%;" /></center>
-我们之前在讲bias和variance的trade off的时候说过，打靶有两种情况：
+我們之前在講bias和variance的trade off的時候說過，打靶有兩種情況：
 
-- 一种是因为bias大而导致打不准(参数过少)
-- 另一种是因为variance大而导致打不准(参数过多)
+- 一種是因為 bias 大而導致打不准(參數過少)
+- 另一種是因為 variance 大而導致打不准(參數過多)
 
-假设我们今天有一个很复杂的model，它往往是bias比较准，但variance很大的情况，如果你有很多个笨重复杂的model，虽然它们的variance都很大，但最后平均起来，结果往往就会很准
+假設我們今天有一個很複雜的 model，它往往是 bias 比較准，但 variance 很大的情況，如果你有很多個笨重複雜的 model，雖然它們的 variance 都很大，但最後平均起來，結果往往就會很准
 
-所以ensemble做的事情，就是利用这个特性，我们从原来的training data里面sample出很多subset，然后train很多个model，每一个model的structure甚至都可以不一样；在testing的时候，丢了一笔testing data进来，使它通过所有的model，得到一大堆的结果，然后把这些结果平均起来当做最后的output
+所以 ensemble 做的事情，就是利用這個特性，我們從原來的 training data 裡面 sample 出很多 subset，然後 train 很多個 model，每一個 model 的 structure 甚至都可以不一樣；在 testing 的時候，丟了一筆 testing data 進來，使它通過所有的 model，得到一大堆的結果，然後把這些結果平均起來當做最後的 output
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/dropout8.png" width="60%;" /></center>
-如果你的model很复杂，这一招往往是很有用的，那著名的random forest(随机森林)也是实践这个精神的一个方法，也就是如果你用一个decision tree，它就会很弱，也很容易overfitting，而如果采用random forest，它就没有那么容易overfitting
+如果你的model很複雜，這一招往往是很有用的，那著名的random forest(隨機森林)也是實踐這個精神的一個方法，也就是如果你用一個decision tree，它就會很弱，也很容易overfitting，而如果採用random forest，它就沒有那麼容易overfitting
 
-###### 为什么dropout是一个终极的ensemble方法呢？
+###### 為什麼 dropout 是一個終極的 ensemble 方法呢？
 
-在training network的时候，每次拿一个minibatch出来就做一次update，而根据dropout的特性，每次update之前都要对所有的neuron进行sample，因此每一个minibatch所训练的network都是不同的
+在 training network 的時候，每次拿一個 minibatch 出來就做一次 update，而根據 dropout 的特性，每次 update 之前都要對所有的 neuron 進行 sample，因此每一個 minibatch 所訓練的 network 都是不同的
 
-假设我们有M个neuron，每个neuron都有可能drop或不drop，所以总共可能的network数量有$2^M$个；所以当你在做dropout的时候，相当于是在用很多个minibatch分别去训练很多个network(一个minibatch一般设置为100笔data)，由于update次数是有限的，所以做了几次update，就相当于train了几个不同的network，最多可以训练到$2^M$个network
+假設我們有 M 個 neuron，每個 neuron 都有可能 drop 或不 drop，所以總共可能的 network 數量有$2^M$個；所以當你在做 dropout 的時候，相當於是在用很多個 minibatch 分別去訓練很多個 network(一個 minibatch 一般設置為 100 筆 data)，由於 update 次數是有限的，所以做了幾次 update，就相當於 train 了幾個不同的 network，最多可以訓練到$2^M$個 network
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/dropout9.png" width="60%;" /></center>
-每个network都只用一个minibatch的data来train，可能会让人感到不安，一个batch才100笔data，怎么train一个network呢？其实没有关系，因为这些**不同的network之间的参数是shared**，也就是说，虽然一个network只能用一个minibatch来train，但同一个weight可以在不同的network里被不同的minibatch train，所以同一个weight实际上是被所有没有丢掉它的network一起share的，它是拿所有这些network的minibatch合起来一起train的结果
+每個network都只用一個minibatch的data來train，可能會讓人感到不安，一個batch才100筆data，怎麼train一個network呢？其實沒有關係，因為這些**不同的network之間的參數是shared**，也就是說，雖然一個network只能用一個minibatch來train，但同一個weight可以在不同的network里被不同的minibatch train，所以同一個weight實際上是被所有沒有丟掉它的network一起share的，它是拿所有這些network的minibatch合起來一起train的結果
 
-###### 实际操作ensemble的做法
+###### 實際操作 ensemble 的做法
 
-那按照ensemble这个方法的逻辑，在testing的时候，你把那train好的一大把network通通拿出来，然后把手上这一笔testing data丢到这把network里面去，每个network都给你吐出一个结果来，然后你把所有的结果平均起来 ，就是最后的output
+那按照 ensemble 這個方法的邏輯，在 testing 的時候，你把那 train 好的一大把 network 通通拿出來，然後把手上這一筆 testing data 丟到這把 network 裡面去，每個 network 都給你吐出一個結果來，然後你把所有的結果平均起來 ，就是最後的 output
 
-但是在实际操作上，如下图左侧所示，这一把network实在太多了，你没有办法每一个network都丢一个input进去，再把它们的output平均起来，这样运算量太大了
+但是在實際操作上，如下圖左側所示，這一把 network 實在太多了，你沒有辦法每一個 network 都丟一個 input 進去，再把它們的 output 平均起來，這樣運算量太大了
 
-所以dropout最神奇的地方是，当你并没有把这些network分开考虑，而是用一个完整的network，这个network的weight是用之前那一把network train出来的对应weight乘上(1-p%)，然后再把手上这笔testing data丢进这个完整的network，得到的output跟network分开考虑的ensemble的output，是惊人的相近
+所以 dropout 最神奇的地方是，當你並沒有把這些 network 分開考慮，而是用一個完整的 network，這個 network 的 weight 是用之前那一把 network train 出來的對應 weight 乘上(1-p%)，然後再把手上這筆 testing data 丟進這個完整的 network，得到的 output 跟 network 分開考慮的 ensemble 的 output，是驚人的相近
 
-也就是说下图左侧ensemble的做法和右侧dropout的做法，得到的结果是approximate(近似)的
+也就是說下圖左側 ensemble 的做法和右側 dropout 的做法，得到的結果是 approximate(近似)的
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/dropout10.png" width="60%;" /></center>
-###### 举例说明dropout和ensemble的关系
+###### 舉例說明dropout和ensemble的關係
 
-这里用一个例子来解释：
+這裡用一個例子來解釋：
 
-我们train一个下图右上角所示的简单的network，它只有一个neuron，activation function是linear的，并且不考虑bias，这个network经过dropout训练以后得到的参数分别为$w_1,w_2$，那给它input $x_1,x_2$，得到的output就是$z=w_1 x_1+w_2 x_2$
+我們 train 一個下圖右上角所示的簡單的 network，它只有一個 neuron，activation function 是 linear 的，並且不考慮 bias，這個 network 經過 dropout 訓練以後得到的參數分別為$w_1,w_2$，那給它 input $x_1,x_2$，得到的 output 就是$z=w_1 x_1+w_2 x_2$
 
-如果我们今天要做ensemble的话，theoretically就是像下图这么做，每一个neuron都有可能被drop或不drop，这里只有两个input的neuron，所以我们一共可以得到2^2=4种network
+如果我們今天要做 ensemble 的話，theoretically 就是像下圖這麼做，每一個 neuron 都有可能被 drop 或不 drop，這裡只有兩個 input 的 neuron，所以我們一共可以得到 2^2=4 種 network
 
-我们手上这笔testing data $x_1,x_2$丢到这四个network中，分别得到4个output：$w_1x_1+w_2x_2,w_2x_2,w_1x_1,0$，然后根据ensemble的精神，把这四个network的output通通都average起来，得到的结果是$\frac{1}{2}(w_1x_1+w_2x_2)$
+我們手上這筆 testing data $x_1,x_2$丟到這四個 network 中，分別得到 4 個 output：$w_1x_1+w_2x_2,w_2x_2,w_1x_1,0$，然後根據 ensemble 的精神，把這四個 network 的 output 通通都 average 起來，得到的結果是$\frac{1}{2}(w_1x_1+w_2x_2)$
 
-那根据dropout的想法，我们把从training中得到的参数$w_1,w_2$乘上(1-50%)，作为testing network里的参数，也就是$w'_1,w'_2=(1-50\%)(w_1,w_2)=0.5w_1,0.5w_2$
+那根據 dropout 的想法，我們把從 training 中得到的參數$w_1,w_2$乘上(1-50%)，作為 testing network 里的參數，也就是$w'_1,w'_2=(1-50\%)(w_1,w_2)=0.5w_1,0.5w_2$
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/dropout11.png" width="60%;" /></center>
-这边想要呈现的是，在这个最简单的case里面，用不同的network structure做ensemble这件事情，跟我们用一整个network，并且把weight乘上一个值而不做ensemble所得到的output，其实是一样的
+這邊想要呈現的是，在這個最簡單的case裡面，用不同的network structure做ensemble這件事情，跟我們用一整個network，並且把weight乘上一個值而不做ensemble所得到的output，其實是一樣的
 
-值得注意的是，**只有是linear的network，才会得到上述的等价关系**，如果network是非linear的，ensemble和dropout是不equivalent的；但是，dropout最后一个很神奇的地方是，虽然在non-linear的情况下，它是跟ensemble不相等的，但最后的结果还是会work
+值得注意的是，**只有是 linear 的 network，才會得到上述的等價關係**，如果 network 是非 linear 的，ensemble 和 dropout 是不 equivalent 的；但是，dropout 最後一個很神奇的地方是，雖然在 non-linear 的情況下，它是跟 ensemble 不相等的，但最後的結果還是會 work
 
-==**如果network很接近linear的话，dropout所得到的performance会比较好，而ReLU和Maxout的network相对来说是比较接近于linear的，所以我们通常会把含有ReLU或Maxout的network与Dropout配合起来使用**==
+==**如果 network 很接近 linear 的話，dropout 所得到的 performance 會比較好，而 ReLU 和 Maxout 的 network 相對來說是比較接近於 linear 的，所以我們通常會把含有 ReLU 或 Maxout 的 network 與 Dropout 配合起來使用**==

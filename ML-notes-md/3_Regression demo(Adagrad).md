@@ -1,29 +1,27 @@
-
 # Regression：linear model
-> 这里用的是 Adagrad ，接下来的课程会再细讲，这里只是想显示 gradient descent 实作起来没有想像的那么简单，还有很多小技巧要注意
 
-这里采用最简单的linear model：**y_data=b+w*x_data**
+> 這裡用的是 Adagrad ，接下來的課程會再細講，這裡只是想顯示 gradient descent 實作起來沒有想像的那麼簡單，還有很多小技巧要注意
 
-我们要用gradient descent把b和w找出来
+這裡採用最簡單的 linear model：**y_data=b+w\*x_data**
 
-当然这个问题有closed-form solution，这个b和w有更简单的方法可以找出来；那我们假装不知道这件事，我们练习用gradient descent把b和w找出来
+我們要用 gradient descent 把 b 和 w 找出來
 
-#### 数据准备：
+當然這個問題有 closed-form solution，這個 b 和 w 有更簡單的方法可以找出來；那我們假裝不知道這件事，我們練習用 gradient descent 把 b 和 w 找出來
 
+#### 數據準備：
 
 ```python
-# 假设x_data和y_data都有10笔，分别代表宝可梦进化前后的cp值
+# 假設x_data和y_data都有10筆，分別代表寶可夢進化前後的cp值
 x_data=[338.,333.,328.,207.,226.,25.,179.,60.,208.,606.]
 y_data=[640.,633.,619.,393.,428.,27.,193.,66.,226.,1591.]
-# 这里采用最简单的linear model：y_data=b+w*x_data
-# 我们要用gradient descent把b和w找出来
+# 這裡採用最簡單的linear model：y_data=b+w*x_data
+# 我們要用gradient descent把b和w找出來
 ```
 
-#### 计算梯度微分的函数getGrad()
-
+#### 計算梯度微分的函數 getGrad()
 
 ```python
-# 计算梯度微分的函数getGrad()
+# 計算梯度微分的函數getGrad()
 def getGrad(b,w):
     # initial b_grad and w_grad
     b_grad=0.0
@@ -34,15 +32,15 @@ def getGrad(b,w):
     return (b_grad,w_grad)
 ```
 
-### 1、自己写的版本
-当两个微分值b_grad和w_grad都为0时，gradient descent停止，b和w的值就是我们要找的最终参数
+### 1、自己寫的版本
 
+當兩個微分值 b_grad 和 w_grad 都為 0 時，gradient descent 停止，b 和 w 的值就是我們要找的最終參數
 
 ```python
-# 这是我自己写的版本，事实证明结果很糟糕。。。
+# 這是我自己寫的版本，事實證明結果很糟糕。。。
 # y_data=b+w*x_data
-# 首先，这里没有用到高次项，仅是一个简单的linear model，因此不需要regularization版本的loss function
-# 我们只需要随机初始化一个b和w，然后用b_grad和w_grad记录下每一次iteration的微分值；不断循环更新b和w直至两个微分值b_grad和w_grad都为0，此时gradient descent停止，b和w的值就是我们要找的最终参数
+# 首先，這裡沒有用到高次項，僅是一個簡單的linear model，因此不需要regularization版本的loss function
+# 我們只需要隨機初始化一個b和w，然後用b_grad和w_grad記錄下每一次iteration的微分值；不斷循環更新b和w直至兩個微分值b_grad和w_grad都為0，此時gradient descent停止，b和w的值就是我們要找的最終參數
 
 b=-120 # initial b
 w=-4 # initial w
@@ -69,29 +67,26 @@ print("the average error is "+str(average_error))
     the function will be y_data=-inf+nan*x_data
     the average error is nan
 
+上面的數據輸出處於隱藏狀態，點擊即可顯示
 
-上面的数据输出处于隐藏状态，点击即可显示
+### 2、這裡使用李宏毅老師的 demo 嘗試
 
-### 2、这里使用李宏毅老师的demo尝试
-
-#### 引入需要的库
-
+#### 引入需要的庫
 
 ```python
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('Agg')
-%matplotlib inline 
+%matplotlib inline
 import random as random
 import numpy as np
 import csv
 ```
 
-#### 准备好b、w、loss的图像数据
-
+#### 準備好 b、w、loss 的圖像數據
 
 ```python
-# 生成一组b和w的数据图，方便给gradient descent的过程做标记
+# 生成一組b和w的數據圖，方便給gradient descent的過程做標記
 x = np.arange(-200,-100,1) # bias
 y = np.arange(-5,5,0.1) # weight
 Z = np.zeros((len(x),len(y))) # color
@@ -100,39 +95,39 @@ for i in range(len(x)):
     for j in range(len(y)):
         b = x[i]
         w = y[j]
-        
-        # Z[j][i]存储的是loss
+
+        # Z[j][i]存儲的是loss
         Z[j][i] = 0
         for n in range(len(x_data)):
             Z[j][i] = Z[j][i] + (y_data[n] - (b + w * x_data[n]))**2
         Z[j][i] = Z[j][i]/len(x_data)
 ```
 
-#### 规定迭代次数和learning rate，进行第一次尝试
-距离最优解还有一段距离
+#### 規定迭代次數和 learning rate，進行第一次嘗試
 
+距離最優解還有一段距離
 
 ```python
 # y_data = b + w * x_data
 b = -120 # initial b
 w = -4 # initial w
 lr = 0.0000001 # learning rate
-iteration = 100000 # 这里直接规定了迭代次数，而不是一直运行到b_grad和w_grad都为0(事实证明这样做不太可行)
+iteration = 100000 # 這裡直接規定了迭代次數，而不是一直運行到b_grad和w_grad都為0(事實證明這樣做不太可行)
 
-# store initial values for plotting，我们想要最终把数据描绘在图上，因此存储过程数据
+# store initial values for plotting，我們想要最終把數據描繪在圖上，因此存儲過程數據
 b_history = [b]
 w_history = [w]
 
 # iterations
 for i in range(iteration):
-    
+
     # get new b_grad and w_grad
     b_grad,w_grad=getGrad(b,w)
-    
+
     # update b and w
     b -= lr * b_grad
     w -= lr * w_grad
-    
+
     #store parameters for plotting
     b_history.append(b)
     w_history.append(w)
@@ -148,37 +143,36 @@ plt.ylabel(r'$w$',fontsize=16)
 plt.show()
 ```
 
-
 <center><img src="https://img-blog.csdnimg.cn/20200123150335527.png" width="60%;"/></center>
 
-#### 把learning rate增大10倍尝试
-发现经过100000次的update以后，我们的参数相比之前与最终目标更接近了，但是这里有一个剧烈的震荡现象发生
+#### 把 learning rate 增大 10 倍嘗試
 
+發現經過 100000 次的 update 以後，我們的參數相比之前與最終目標更接近了，但是這裡有一個劇烈的震蕩現象發生
 
 ```python
-# 上图中，gradient descent最终停止的地方里最优解还差很远，
-# 由于我们是规定了iteration次数的，因此原因应该是learning rate不够大，这里把它放大10倍
+# 上圖中，gradient descent最終停止的地方里最優解還差很遠，
+# 由於我們是規定了iteration次數的，因此原因應該是learning rate不夠大，這裡把它放大10倍
 
 # y_data = b + w * x_data
 b = -120 # initial b
 w = -4 # initial w
 lr = 0.000001 # learning rate 放大10倍
-iteration = 100000 # 这里直接规定了迭代次数，而不是一直运行到b_grad和w_grad都为0(事实证明这样做不太可行)
+iteration = 100000 # 這裡直接規定了迭代次數，而不是一直運行到b_grad和w_grad都為0(事實證明這樣做不太可行)
 
-# store initial values for plotting，我们想要最终把数据描绘在图上，因此存储过程数据
+# store initial values for plotting，我們想要最終把數據描繪在圖上，因此存儲過程數據
 b_history = [b]
 w_history = [w]
 
 # iterations
 for i in range(iteration):
-    
+
     # get new b_grad and w_grad
     b_grad,w_grad=getGrad(b,w)
-    
+
     # update b and w
     b -= lr * b_grad
     w -= lr * w_grad
-    
+
     #store parameters for plotting
     b_history.append(b)
     w_history.append(w)
@@ -194,39 +188,38 @@ plt.ylabel(r'$w$',fontsize=16)
 plt.show()
 ```
 
-
 <center><img src="https://img-blog.csdnimg.cn/20200123150716524.png" width="60%;"/></center>
 
-#### 把learning rate再增大10倍
-发现此时learning rate太大了，参数一update，就远远超出图中标注的范围了
+#### 把 learning rate 再增大 10 倍
 
-所以我们会发现一个很严重的问题，如果learning rate变小一点，他距离最佳解还是会具有一段距离；但是如果learning rate放大，它就会直接超出范围了
+發現此時 learning rate 太大了，參數一 update，就遠遠超出圖中標注的範圍了
 
+所以我們會發現一個很嚴重的問題，如果 learning rate 變小一點，他距離最佳解還是會具有一段距離；但是如果 learning rate 放大，它就會直接超出範圍了
 
 ```python
-# 上图中，gradient descent最终停止的地方里最优解还是有一点远，
-# 由于我们是规定了iteration次数的，因此原因应该是learning rate还是不够大，这里再把它放大10倍
+# 上圖中，gradient descent最終停止的地方里最優解還是有一點遠，
+# 由於我們是規定了iteration次數的，因此原因應該是learning rate還是不夠大，這裡再把它放大10倍
 
 # y_data = b + w * x_data
 b = -120 # initial b
 w = -4 # initial w
 lr = 0.00001 # learning rate 放大10倍
-iteration = 100000 # 这里直接规定了迭代次数，而不是一直运行到b_grad和w_grad都为0(事实证明这样做不太可行)
+iteration = 100000 # 這裡直接規定了迭代次數，而不是一直運行到b_grad和w_grad都為0(事實證明這樣做不太可行)
 
-# store initial values for plotting，我们想要最终把数据描绘在图上，因此存储过程数据
+# store initial values for plotting，我們想要最終把數據描繪在圖上，因此存儲過程數據
 b_history = [b]
 w_history = [w]
 
 # iterations
 for i in range(iteration):
-    
+
     # get new b_grad and w_grad
     b_grad,w_grad=getGrad(b,w)
-    
+
     # update b and w
     b -= lr * b_grad
     w -= lr * w_grad
-    
+
     #store parameters for plotting
     b_history.append(b)
     w_history.append(w)
@@ -242,28 +235,26 @@ plt.ylabel(r'$w$',fontsize=16)
 plt.show()
 ```
 
-
 <center><img src="https://img-blog.csdnimg.cn/2020012315075713.png" width="60%;"/></center>
 
-这个问题明明很简单，可是只有两个参数b和w，gradient descent搞半天都搞不定，那以后做neural network有数百万个参数的时候，要怎么办呢
+這個問題明明很簡單，可是只有兩個參數 b 和 w，gradient descent 搞半天都搞不定，那以後做 neural network 有數百萬個參數的時候，要怎麼辦呢
 
-这个就是**一室不治何以国家为**的概念
+這個就是**一室不治何以國家為**的概念
 
-#### 解决方案：Adagrad
+#### 解決方案：Adagrad
 
-我们给b和w订制化的learning rate，让它们两个的learning rate不一样
-
+我們給 b 和 w 訂制化的 learning rate，讓它們兩個的 learning rate 不一樣
 
 ```python
-# 这里给b和w不同的learning rate 
+# 這裡給b和w不同的learning rate
 
 # y_data = b + w * x_data
 b = -120 # initial b
 w = -4 # initial w
 lr = 1 # learning rate 放大10倍
-iteration = 100000 # 这里直接规定了迭代次数，而不是一直运行到b_grad和w_grad都为0(事实证明这样做不太可行)
+iteration = 100000 # 這裡直接規定了迭代次數，而不是一直運行到b_grad和w_grad都為0(事實證明這樣做不太可行)
 
-# store initial values for plotting，我们想要最终把数据描绘在图上，因此存储过程数据
+# store initial values for plotting，我們想要最終把數據描繪在圖上，因此存儲過程數據
 b_history = [b]
 w_history = [w]
 
@@ -272,26 +263,26 @@ lr_w = 0
 
 # iterations
 for i in range(iteration):
-    
+
     # get new b_grad and w_grad
     b_grad,w_grad=getGrad(b,w)
-    
+
     # get the different learning rate for b and w
     lr_b = lr_b + b_grad ** 2
     lr_w = lr_w + w_grad ** 2
-    
-    # 这一招叫做adagrad，之后会详加解释
+
+    # 這一招叫做adagrad，之後會詳加解釋
     # update b and w with new learning rate
     b -= lr / np.sqrt(lr_b) * b_grad
     w -= lr / np.sqrt(lr_w) * w_grad
-    
+
     #store parameters for plotting
     b_history.append(b)
     w_history.append(w)
-    
+
     # output the b w b_grad w_grad
     # print("b: "+str(b)+"\t\t\t w: "+str(w)+"\n"+"b_grad: "+str(b_grad)+"\t\t w_grad: "+str(w_grad)+"\n")
-    
+
 # output the final function and its error
 print("the function will be y_data="+str(b)+"+"+str(w)+"*x_data")
 error=0.0
@@ -313,22 +304,18 @@ plt.show()
 ```
 
     the function will be y_data=-188.3668387495323+2.6692640713379903*x_data
-    error 0 is: 73.84441736270833 
-    error 1 is: 67.4980970060185 
-    error 2 is: 68.15177664932844 
-    error 3 is: 28.8291759825683 
-    error 4 is: 13.113158627146447 
-    error 5 is: 148.63523696608252 
-    error 6 is: 96.43143001996799 
-    error 7 is: 94.21099446925288 
-    error 8 is: 140.84008808876973 
-    error 9 is: 161.7928115187101 
+    error 0 is: 73.84441736270833
+    error 1 is: 67.4980970060185
+    error 2 is: 68.15177664932844
+    error 3 is: 28.8291759825683
+    error 4 is: 13.113158627146447
+    error 5 is: 148.63523696608252
+    error 6 is: 96.43143001996799
+    error 7 is: 94.21099446925288
+    error 8 is: 140.84008808876973
+    error 9 is: 161.7928115187101
     the average error is 89.33471866905532
-
-
 
 <center><img src="https://img-blog.csdnimg.cn/20200123150828598.png" width="60%;"/></center>
 
-**有了新的learning rate以后，从初始值到终点，我们在100000次iteration之内就可以顺利地完成了**
-
-
+**有了新的 learning rate 以後，從初始值到終點，我們在 100000 次 iteration 之內就可以順利地完成了**

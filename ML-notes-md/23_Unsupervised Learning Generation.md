@@ -1,140 +1,143 @@
 # Unsupervised Learning: Generation
 
-> 本文将简单介绍无监督学习中的生成模型，包括PixelRNN、VAE和GAN，以后将会有一个专门的系列介绍对抗生成网络GAN
+> 本文將簡單介紹無監督學習中的生成模型，包括 PixelRNN、VAE 和 GAN，以後將會有一個專門的系列介紹對抗生成網絡 GAN
 
 #### Introduction
 
-正如*Richard Feynman*所说，*“What I cannot create, I do not understand”*，我无法创造的东西，我也无法真正理解，机器可以做猫狗分类，但却不一定知道“猫”和“狗”的概念，但如果机器能自己画出“猫”来，它或许才真正理解了“猫”这个概念
+正如*Richard Feynman*所說，_「What I cannot create, I do not understand」_，我無法創造的東西，我也無法真正理解，機器可以做貓狗分類，但卻不一定知道「貓」和「狗」的概念，但如果機器能自己畫出「貓」來，它或許才真正理解了「貓」這個概念
 
-这里将简要介绍：PixelRNN、VAE和GAN这三种方法
+這裡將簡要介紹：PixelRNN、VAE 和 GAN 這三種方法
 
 #### PixelRNN
 
 ##### Introduction
 
-RNN可以处理长度可变的input，它的基本思想是根据过去发生的所有状态去推测下一个状态
+RNN 可以處理長度可變的 input，它的基本思想是根據過去發生的所有狀態去推測下一個狀態
 
-PixelRNN的基本思想是每次只画一个pixel，这个pixel是由过去所有已产生的pixel共同决定的
+PixelRNN 的基本思想是每次只畫一個 pixel，這個 pixel 是由過去所有已產生的 pixel 共同決定的
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/pixel-rnn.png" width="60%"/></center>
 
-这个方法也适用于语音生成，可以用前面一段的语音去预测接下来生成的语音信号
+這個方法也適用於語音生成，可以用前面一段的語音去預測接下來生成的語音信號
 
-总之，这种方法的精髓在于根据过去预测未来，画出来的图一般都是比较清晰的
+總之，這種方法的精髓在於根據過去預測未來，畫出來的圖一般都是比較清晰的
 
 ##### pokemon creation
 
-用这个方法去生成宝可梦，有几个tips：
+用這個方法去生成寶可夢，有幾個 tips：
 
-- 为了减少运算量，将40×40的图像截取成20×20
+- 為了減少運算量，將 40×40 的圖像截取成 20×20
 
-- 如果将每个pixel都以[R, G, B]的vector表示的话，生成的图像都是灰蒙蒙的，原因如下：
+- 如果將每個 pixel 都以[R, G, B]的 vector 表示的話，生成的圖像都是灰蒙蒙的，原因如下：
 
-    - 亮度比较高的图像，一般都是RGB值差距特别大而形成的，如果各个维度的值大小比较接近，则生成的图像偏向于灰色
+  - 亮度比較高的圖像，一般都是 RGB 值差距特別大而形成的，如果各個維度的值大小比較接近，則生成的圖像偏向於灰色
 
-    - 如果用sigmoid function，最终生成的RGB往往都是在0.5左右，导致色彩度不鲜艳
+  - 如果用 sigmoid function，最終生成的 RGB 往往都是在 0.5 左右，導致色彩度不鮮艷
 
-    - 解决方案：将所有色彩集合成一个1-of-N编码，由于色彩种类比较多，因此这里先对类似的颜色做clustering聚类，最终获得了167种色彩组成的向量
+  - 解決方案：將所有色彩集合成一個 1-of-N 編碼，由於色彩種類比較多，因此這裡先對類似的顏色做 clustering 聚類，最終獲得了 167 種色彩組成的向量
 
-        我们用这样的向量去表示每个pixel，可以让生成的色彩比较鲜艳
+    我們用這樣的向量去表示每個 pixel，可以讓生成的色彩比較鮮艷
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/pixel-rnn-pokemon.png" width="60%"/></center>
 
-相关数据连接如下：
+相關數據連接如下：
 
-- 原始图像(40\*40)数据的[链接](http://speech.ee.ntu.edu.tw/~tlkagk/courses/ML_2016/Pokemon_creation/image.rar)
-- 裁剪后的图像(20\*20)数据[链接](http://speech.ee.ntu.edu.tw/~tlkagk/courses/ML_2016/Pokemon_creation/pixel_color.txt)
-- 数值与色彩(RGB)的映射关系[链接](http://speech.ee.ntu.edu.tw/~tlkagk/courses/ML_2016/Pokemon_creation/colormap.txt)
+- 原始圖像(40\*40)數據的[鏈接](http://speech.ee.ntu.edu.tw/~tlkagk/courses/ML_2016/Pokemon_creation/image.rar)
+- 裁剪後的圖像(20\*20)數據[鏈接](http://speech.ee.ntu.edu.tw/~tlkagk/courses/ML_2016/Pokemon_creation/pixel_color.txt)
+- 數值與色彩(RGB)的映射關係[鏈接](http://speech.ee.ntu.edu.tw/~tlkagk/courses/ML_2016/Pokemon_creation/colormap.txt)
 
-使用PixelRNN训练好模型之后，给它看没有被放在训练集中的3张图像的一部分，分别遮住原图的50%和75%，得到的原图和预测结果的对比如下：
+使用 PixelRNN 訓練好模型之後，給它看沒有被放在訓練集中的 3 張圖像的一部分，分別遮住原圖的 50%和 75%，得到的原圖和預測結果的對比如下：
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/pixel-rnn-pokemon2.png" width="60%"/></center>
 
 #### VAE
 
-VAE全称Variational Autoencoder，可变自动编码器
+VAE 全稱 Variational Autoencoder，可變自動編碼器
 
 ##### Introduction
 
-前面的文章中已经介绍过Autoencoder的基本思想，我们拿出其中的Decoder，给它随机的输入数据，就可以生成对应的图像
+前面的文章中已經介紹過 Autoencoder 的基本思想，我們拿出其中的 Decoder，給它隨機的輸入數據，就可以生成對應的圖像
 
-但普通的Decoder生成效果并不好，VAE可以得到更好的效果
+但普通的 Decoder 生成效果並不好，VAE 可以得到更好的效果
 
-在VAE中，code不再直接等于Encoder的输出，这里假设目标降维空间为3维，那我们使Encoder分别输出$m_1,m_2,m_3$和$\sigma_1,\sigma_2,\sigma_3$，此外我们从正态分布中随机取出三个点$e_1,e_2,e_3$，将下式作为最终的编码结果：
+在 VAE 中，code 不再直接等於 Encoder 的輸出，這裡假設目標降維空間為 3 維，那我們使 Encoder 分別輸出$m_1,m_2,m_3$和$\sigma_1,\sigma_2,\sigma_3$，此外我們從正態分布中隨機取出三個點$e_1,e_2,e_3$，將下式作為最終的編碼結果：
+
 $$
 c_i = e^{\sigma_i}\cdot e_i+m_i
 $$
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/vae.png" width="60%"/></center>
 
-此时，我们的训练目标不仅要最小化input和output之间的差距，还要同时最小化下式：
+此時，我們的訓練目標不僅要最小化 input 和 output 之間的差距，還要同時最小化下式：
+
 $$
 \sum\limits_{i=1}^3 (1+\sigma_i-(m_i)^2-e^{\sigma_i})
 $$
-与PixelRNN不同的是，VAE画出的图一般都是不太清晰的，但在某种程度上我们可以控制生成的图像
+
+與 PixelRNN 不同的是，VAE 畫出的圖一般都是不太清晰的，但在某種程度上我們可以控制生成的圖像
 
 ##### write poetry
 
-VAE还可以用来写诗，我们只需要得到某两句话对应的code，然后在降维后的空间中得到这两个code所在点的连线，从中取样，并输入给Decoder，就可以得到类似下图中的效果
+VAE 還可以用來寫詩，我們只需要得到某兩句話對應的 code，然後在降維後的空間中得到這兩個 code 所在點的連線，從中取樣，並輸入給 Decoder，就可以得到類似下圖中的效果
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/vae-poetry.png" width="60%"/></center>
 
 ##### Why VAE?
 
-VAE和传统的Autoencoder相比，有什么优势呢？
+VAE 和傳統的 Autoencoder 相比，有什麼優勢呢？
 
-事实上，VAE就是加了噪声noise的Autoencoder，它的抗干扰能力更强，过渡生成能力也更强
+事實上，VAE 就是加了噪聲 noise 的 Autoencoder，它的抗干擾能力更強，過渡生成能力也更強
 
-对原先的Autoencoder来说，假设我们得到了满月和弦月的code，从两者连线中随机获取一个点并映射回原来的空间，得到的图像很可能是完全不一样的东西
+對原先的 Autoencoder 來說，假設我們得到了滿月和弦月的 code，從兩者連線中隨機獲取一個點並映射回原來的空間，得到的圖像很可能是完全不一樣的東西
 
-而对VAE来说，它要保证在降维后的空间中，加了noise的一段范围内的所有点都能够映射到目标图像，如下图所示，当某个点既被要求映射到满月、又被要求映射到弦月，则它最终映射出来的结果就很有可能是两者之间的过渡图像
+而對 VAE 來說，它要保證在降維後的空間中，加了 noise 的一段範圍內的所有點都能夠映射到目標圖像，如下圖所示，當某個點既被要求映射到滿月、又被要求映射到弦月，則它最終映射出來的結果就很有可能是兩者之間的過渡圖像
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/vae-why.png" width="60%"/></center>
 
-再回过来头看VAE的结构，其中：
+再回過來頭看 VAE 的結構，其中：
 
-- $m_i$其实就代表原来的code
+- $m_i$其實就代表原來的 code
 
-- $c_i$则代表加了noise以后的code
+- $c_i$則代表加了 noise 以後的 code
 
-- $\sigma_i$代表了noise的variance，描述了noise的大小，这是由NN学习到的参数
+- $\sigma_i$代表了 noise 的 variance，描述了 noise 的大小，這是由 NN 學習到的參數
 
-    注：使用$e^{\sigma_i}$的目的是保证variance是正的
+  注：使用$e^{\sigma_i}$的目的是保證 variance 是正的
 
-- $e_i$是正态分布中随机采样的点
+- $e_i$是正態分布中隨機採樣的點
 
-注意到，损失函数仅仅让input和output差距最小是不够的，因为variance是由机器自己决定的，如果不加以约束，它自然会去让variance=0，这就跟普通的Autoencoder没有区别了
+注意到，損失函數僅僅讓 input 和 output 差距最小是不夠的，因為 variance 是由機器自己決定的，如果不加以約束，它自然會去讓 variance=0，這就跟普通的 Autoencoder 沒有區別了
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/vae-why2.png" width="60%"/></center>
 
-额外加的限制函数解释如下：
+額外加的限制函數解釋如下：
 
-下图中，蓝线表示$e^{\sigma_i}$，红线表示$1+\sigma_i$，两者相减得到绿线
+下圖中，藍線表示$e^{\sigma_i}$，紅線表示$1+\sigma_i$，兩者相減得到綠線
 
-绿线的最低点$\sigma_i=0$，则variance $e^{\sigma_i}=1$，此时loss最低
+綠線的最低點$\sigma_i=0$，則 variance $e^{\sigma_i}=1$，此時 loss 最低
 
-而$(m_i)^2$项则是对code的L2 regularization，让它比较sparse，不容易过拟合
+而$(m_i)^2$項則是對 code 的 L2 regularization，讓它比較 sparse，不容易過擬合
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/vae-why3.png" width="60%"/></center>
 
-关于VAE原理的具体推导比较复杂，这里不再列出
+關於 VAE 原理的具體推導比較複雜，這裡不再列出
 
 ##### problems of VAE
 
-VAE有一个缺点，它只是在努力做到让生成的图像与数据集里的图像尽可能相似，却从来没有想过怎么样真的产生一张新的图像，因此由VAE生成的图像大多是数据集中图像的线性变化，而很难自主生成全新的图像
+VAE 有一個缺點，它只是在努力做到讓生成的圖像與數據集里的圖像盡可能相似，卻從來沒有想過怎麼樣真的產生一張新的圖像，因此由 VAE 生成的圖像大多是數據集中圖像的線性變化，而很難自主生成全新的圖像
 
-VAE做到的只是模仿，而不是创造，GAN的诞生，就是为了创造
+VAE 做到的只是模仿，而不是創造，GAN 的誕生，就是為了創造
 
 #### GAN
 
-GAN，对抗生成网络，是近两年非常流行的神经网络，基本思想就像是天敌之间相互竞争，相互进步
+GAN，對抗生成網絡，是近兩年非常流行的神經網絡，基本思想就像是天敵之間相互競爭，相互進步
 
-GAN由生成器(Generator)和判别器(Discriminator)组成：
+GAN 由生成器(Generator)和判別器(Discriminator)組成：
 
-- 对判别器的训练：把生成器产生的图像标记为0，真实图像标记为1，丢给判别器训练分类
-- 对生成器的训练：调整生成器的参数，使产生的图像能够骗过判别器
-- 每次训练调整判别器或生成器参数的时候，都要固定住另一个的参数
+- 對判別器的訓練：把生成器產生的圖像標記為 0，真實圖像標記為 1，丟給判別器訓練分類
+- 對生成器的訓練：調整生成器的參數，使產生的圖像能夠騙過判別器
+- 每次訓練調整判別器或生成器參數的時候，都要固定住另一個的參數
 
-GAN的问题：没有明确的训练目标，很难调整生成器和判别器的参数使之始终处于势均力敌的状态，当两者之间的loss很小的时候，并不意味着训练结果是好的，有可能它们两个一起走向了一个坏的极端，所以在训练的同时还必须要有人在旁边关注着训练的情况
+GAN 的問題：沒有明確的訓練目標，很難調整生成器和判別器的參數使之始終處於勢均力敵的狀態，當兩者之間的 loss 很小的時候，並不意味著訓練結果是好的，有可能它們兩個一起走向了一個壞的極端，所以在訓練的同時還必須要有人在旁邊關注著訓練的情況
 
-以后将会有GAN系列的文章介绍，本文不再做详细说明
+以後將會有 GAN 系列的文章介紹，本文不再做詳細說明

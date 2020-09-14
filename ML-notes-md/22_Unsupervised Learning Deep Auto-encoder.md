@@ -1,199 +1,199 @@
 # Unsupervised Learning: Deep Auto-encoder
 
-> 文本介绍了自编码器的基本思想，与PCA的联系，从单层编码到多层的变化，在文字搜索和图像搜索上的应用，预训练DNN的基本过程，利用CNN实现自编码器的过程，加噪声的自编码器，利用解码器生成图像等内容
+> 文本介紹了自編碼器的基本思想，與 PCA 的聯繫，從單層編碼到多層的變化，在文字搜索和圖像搜索上的應用，預訓練 DNN 的基本過程，利用 CNN 實現自編碼器的過程，加噪聲的自編碼器，利用解碼器生成圖像等內容
 
 #### Introduction
 
-**Auto-encoder本质上就是一个自我压缩和解压的过程**，我们想要获取压缩后的code，它代表了对原始数据的某种紧凑精简的有效表达，即降维结果，这个过程中我们需要：
+**Auto-encoder 本質上就是一個自我壓縮和解壓的過程**，我們想要獲取壓縮後的 code，它代表了對原始數據的某種緊湊精簡的有效表達，即降維結果，這個過程中我們需要：
 
-- Encoder(编码器)，它可以把原先的图像压缩成更低维度的向量
-- Decoder(解码器)，它可以把压缩后的向量还原成图像
+- Encoder(編碼器)，它可以把原先的圖像壓縮成更低維度的向量
+- Decoder(解碼器)，它可以把壓縮後的向量還原成圖像
 
-注意到，Encoder和Decoder都是Unsupervised Learning，由于code是未知的，对Encoder来说，我们手中的数据只能提供图像作为NN的input，却不能提供code作为output；对Decoder来说，我们只能提供图像作为NN的output，却不能提供code作为input
+注意到，Encoder 和 Decoder 都是 Unsupervised Learning，由於 code 是未知的，對 Encoder 來說，我們手中的數據只能提供圖像作為 NN 的 input，卻不能提供 code 作為 output；對 Decoder 來說，我們只能提供圖像作為 NN 的 output，卻不能提供 code 作為 input
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto.png" width="60%"/></center>
 
-因此Encoder和Decoder单独拿出一个都无法进行训练，我们需要把它们连接起来，这样整个神经网络的输入和输出都是我们已有的图像数据，就可以同时对Encoder和Decoder进行训练，而降维后的编码结果就可以从最中间的那层hidden layer中获取
+因此 Encoder 和 Decoder 單獨拿出一個都無法進行訓練，我們需要把它們連接起來，這樣整個神經網絡的輸入和輸出都是我們已有的圖像數據，就可以同時對 Encoder 和 Decoder 進行訓練，而降維後的編碼結果就可以從最中間的那層 hidden layer 中獲取
 
 #### Compare with PCA
 
-实际上PCA用到的思想与之非常类似，**PCA的过程本质上就是按组件拆分，再按组件重构的过程**
+實際上 PCA 用到的思想與之非常類似，**PCA 的過程本質上就是按組件拆分，再按組件重構的過程**
 
-在PCA中，我们先把均一化后的$x$根据组件$W$分解到更低维度的$c$，然后再将组件权重$c$乘上组件的反置$W^T$得到重组后的$\hat x$，同样我们期望重构后的$\hat x$与原始的$x$越接近越好
+在 PCA 中，我們先把均一化後的$x$根據組件$W$分解到更低維度的$c$，然後再將組件權重$c$乘上組件的反置$W^T$得到重組後的$\hat x$，同樣我們期望重構後的$\hat x$與原始的$x$越接近越好
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto-pca.png" width="60%"/></center>
 
-如果把这个过程看作是神经网络，那么原始的$x$就是input layer，重构$\hat x$就是output layer，中间组件分解权重$c$就是hidden layer，在PCA中它是linear的，我们通常又叫它瓶颈层(Bottleneck layer)
+如果把這個過程看作是神經網絡，那麼原始的$x$就是 input layer，重構$\hat x$就是 output layer，中間組件分解權重$c$就是 hidden layer，在 PCA 中它是 linear 的，我們通常又叫它瓶頸層(Bottleneck layer)
 
-由于经过组件分解降维后的$c$，维数要远比输入输出层来得低，因此hidden layer实际上非常窄，因而有瓶颈层的称呼
+由於經過組件分解降維後的$c$，維數要遠比輸入輸出層來得低，因此 hidden layer 實際上非常窄，因而有瓶頸層的稱呼
 
-对比于Auto-encoder，从input layer到hidden layer的按组件分解实际上就是编码(encode)过程，从hidden layer到output layer按组件重构实际上就是解码(decode)的过程
+對比於 Auto-encoder，從 input layer 到 hidden layer 的按組件分解實際上就是編碼(encode)過程，從 hidden layer 到 output layer 按組件重構實際上就是解碼(decode)的過程
 
-这时候你可能会想，可不可以用更多层hidden layer呢？答案是肯定的
+這時候你可能會想，可不可以用更多層 hidden layer 呢？答案是肯定的
 
 #### Deep Auto-encoder
 
 ##### Multi Layer
 
-对deep的自编码器来说，实际上就是通过多级编码降维，再经过多级解码还原的过程
+對 deep 的自編碼器來說，實際上就是通過多級編碼降維，再經過多級解碼還原的過程
 
-此时：
+此時：
 
-- 从input layer到bottleneck layer的部分都属于$Encoder$
-- 从bottleneck layer到output layer的部分都属于$Decoder$
-- bottleneck layer的output就是自编码结果$code$
+- 從 input layer 到 bottleneck layer 的部分都屬於$Encoder$
+- 從 bottleneck layer 到 output layer 的部分都屬於$Decoder$
+- bottleneck layer 的 output 就是自編碼結果$code$
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto-deep.png" width="60%"/></center>
 
-注意到，如果按照PCA的思路，则Encoder的参数$W_i$需要和Decoder的参数$W_i^T$保持一致的对应关系，这可以通过给两者相同的初始值并设置同样的更新过程得到，这样做的好处是，可以节省一半的参数，降低overfitting的概率
+注意到，如果按照 PCA 的思路，則 Encoder 的參數$W_i$需要和 Decoder 的參數$W_i^T$保持一致的對應關係，這可以通過給兩者相同的初始值並設置同樣的更新過程得到，這樣做的好處是，可以節省一半的參數，降低 overfitting 的概率
 
-但这件事情并不是必要的，实际操作的时候，你完全可以对神经网络进行直接训练而不用保持编码器和解码器的参数一致
+但這件事情並不是必要的，實際操作的時候，你完全可以對神經網絡進行直接訓練而不用保持編碼器和解碼器的參數一致
 
 ##### Visualize
 
-下图给出了Hinton分别采用PCA和Deep Auto-encoder对手写数字进行编码解码后的结果，从784维降到30维，可以看出，Deep的自编码器还原效果比PCA要更好
+下圖給出了 Hinton 分別採用 PCA 和 Deep Auto-encoder 對手寫數字進行編碼解碼後的結果，從 784 維降到 30 維，可以看出，Deep 的自編碼器還原效果比 PCA 要更好
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto-deep2.png" width="60%"/></center>
 
-如果将其降到二维平面做可视化，不同颜色代表不同的数字，可以看到
+如果將其降到二維平面做可視化，不同顏色代表不同的數字，可以看到
 
-- 通过PCA降维得到的编码结果中，不同颜色代表的数字被混杂在一起
-- 通过Deep Auto-encoder降维得到的编码结果中，不同颜色代表的数字被分散成一群一群的
+- 通過 PCA 降維得到的編碼結果中，不同顏色代表的數字被混雜在一起
+- 通過 Deep Auto-encoder 降維得到的編碼結果中，不同顏色代表的數字被分散成一群一群的
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto-visual.png" width="60%"/></center>
 
 #### Text Retrieval
 
-Auto-encoder也可以被用在文字处理上
+Auto-encoder 也可以被用在文字處理上
 
-比如我们要做文字检索，很简单的一个做法是Vector Space Model，把每一篇文章都表示成空间中的一个vector
+比如我們要做文字檢索，很簡單的一個做法是 Vector Space Model，把每一篇文章都表示成空間中的一個 vector
 
-假设查询者输入了某个词汇，那我们就把该查询词汇也变成空间中的一个点，并计算query和每一篇document之间的内积(inner product)或余弦相似度(cos-similarity)
+假設查詢者輸入了某個詞彙，那我們就把該查詢詞彙也變成空間中的一個點，並計算 query 和每一篇 document 之間的內積(inner product)或余弦相似度(cos-similarity)
 
-注：余弦相似度有均一化的效果，可能会得到更好的结果
+注：余弦相似度有均一化的效果，可能會得到更好的結果
 
-下图中跟query向量最接近的几个向量的cosine-similarity是最大的，于是可以从这几篇文章中去检索
+下圖中跟 query 向量最接近的幾個向量的 cosine-similarity 是最大的，於是可以從這幾篇文章中去檢索
 
-实际上这个模型的好坏，就取决于从document转化而来的vector的好坏，它是否能够充分表达文章信息
+實際上這個模型的好壞，就取決於從 document 轉化而來的 vector 的好壞，它是否能夠充分表達文章信息
 
 ##### Bag-of-word
 
-最简单的vector表示方法是Bag-of-word，维数等于所有词汇的总数，某一维等于1则表示该词汇在这篇文章中出现，此外还可以根据词汇的重要性将其加权；但这个模型是非常脆弱的，对它来说每个词汇都是相互独立的，无法体现出词汇之间的语义(semantic)
+最簡單的 vector 表示方法是 Bag-of-word，維數等於所有詞彙的總數，某一維等於 1 則表示該詞彙在這篇文章中出現，此外還可以根據詞彙的重要性將其加權；但這個模型是非常脆弱的，對它來說每個詞彙都是相互獨立的，無法體現出詞彙之間的語義(semantic)
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto-text.png" width="60%"/></center>
 
 ##### Auto-encoder
 
-虽然Bag-of-word不能直接用于表示文章，但我们可以把它作为Auto-encoder的input，通过降维来抽取有效信息，以获取所需的vector
+雖然 Bag-of-word 不能直接用於表示文章，但我們可以把它作為 Auto-encoder 的 input，通過降維來抽取有效信息，以獲取所需的 vector
 
-同样为了可视化，这里将Bag-of-word降维到二维平面上，下图中每个点都代表一篇文章，不同颜色则代表不同的文章类型
+同樣為了可視化，這裡將 Bag-of-word 降維到二維平面上，下圖中每個點都代表一篇文章，不同顏色則代表不同的文章類型
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto-visual2.png" width="60%"/></center>
 
-如果用户做查询，就把查询的语句用相同的方式映射到该二维平面上，并找出属于同一类别的所有文章即可
+如果用戶做查詢，就把查詢的語句用相同的方式映射到該二維平面上，並找出屬於同一類別的所有文章即可
 
-在矩阵分解(Matrix Factorization)中，我们介绍了LSA算法，它可以用来寻找每个词汇和每篇文章背后的隐藏关系(vector)，如果在这里我们采用LSA，并使用二维latent vector来表示每篇文章，得到的可视化结果如上图右下角所示，可见效果并没有Auto-encoder好
+在矩陣分解(Matrix Factorization)中，我們介紹了 LSA 算法，它可以用來尋找每個詞彙和每篇文章背後的隱藏關係(vector)，如果在這裡我們採用 LSA，並使用二維 latent vector 來表示每篇文章，得到的可視化結果如上圖右下角所示，可見效果並沒有 Auto-encoder 好
 
 #### Similar Image Search
 
-Auto-encoder同样可以被用在图像检索上
+Auto-encoder 同樣可以被用在圖像檢索上
 
-以图找图最简单的做法就是直接对输入的图片与数据库中的图片计算pixel的相似度，并挑出最像的图片，但这种方法的效果是不好的，因为单纯的pixel所能够表达的信息太少了
+以圖找圖最簡單的做法就是直接對輸入的圖片與數據庫中的圖片計算 pixel 的相似度，並挑出最像的圖片，但這種方法的效果是不好的，因為單純的 pixel 所能夠表達的信息太少了
 
-我们需要使用Auto-encoder对图像进行降维和特征提取，并在编码得到的code所在空间做检索
+我們需要使用 Auto-encoder 對圖像進行降維和特徵提取，並在編碼得到的 code 所在空間做檢索
 
-下图展示了Encoder的过程，并给出了原图与Decoder后的图像对比
+下圖展示了 Encoder 的過程，並給出了原圖與 Decoder 後的圖像對比
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto-img.png" width="60%"/></center>
 
-这么做的好处如下：
+這麼做的好處如下：
 
-- Auto-encoder可以通过降维提取出一张图像中最有用的特征信息，包括pixel与pixel之间的关系
-- 降维之后数据的size变小了，这意味着模型所需的参数也变少了，同样的数据量对参数更少的模型来说，可以训练出更精确的结果，一定程度上避免了过拟合的发生
-- Auto-encoder是一个无监督学习的方法，数据不需要人工打上标签，这意味着我们只需简单处理就可以获得大量的可用数据
+- Auto-encoder 可以通過降維提取出一張圖像中最有用的特徵信息，包括 pixel 與 pixel 之間的關係
+- 降維之後數據的 size 變小了，這意味著模型所需的參數也變少了，同樣的數據量對參數更少的模型來說，可以訓練出更精確的結果，一定程度上避免了過擬合的發生
+- Auto-encoder 是一個無監督學習的方法，數據不需要人工打上標籤，這意味著我們只需簡單處理就可以獲得大量的可用數據
 
-下图给出了分别以原图的pixel计算相似度和以auto-encoder后的code计算相似度的两种方法在图像检索上的结果，可以看到，通过pixel检索到的图像会出现很多奇怪的物品，而通过code检索到的图像则都是人脸
+下圖給出了分別以原圖的 pixel 計算相似度和以 auto-encoder 後的 code 計算相似度的兩種方法在圖像檢索上的結果，可以看到，通過 pixel 檢索到的圖像會出現很多奇怪的物品，而通過 code 檢索到的圖像則都是人臉
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto-img2.png" width="60%"/></center>
 
-可能有些人脸在原图的pixel上看起来并不像，但把它们投影到256维的空间中却是相像的，可能在投影空间中某一维就代表了人脸的特征，因此能够被检索出来
+可能有些人臉在原圖的 pixel 上看起來並不像，但把它們投影到 256 維的空間中卻是相像的，可能在投影空間中某一維就代表了人臉的特徵，因此能夠被檢索出來
 
 #### Pre-training DNN
 
-在训练神经网络的时候，我们一般都会对如何初始化参数比较困扰，预训练(pre-training)是一种寻找比较好的参数初始化值的方法，而我们可以用Auto-encoder来做pre-training
+在訓練神經網絡的時候，我們一般都會對如何初始化參數比較困擾，預訓練(pre-training)是一種尋找比較好的參數初始化值的方法，而我們可以用 Auto-encoder 來做 pre-training
 
-以MNIST数据集为例，我们对每层hidden layer都做一次auto-encoder，**使每一层都能够提取到上一层最佳的特征向量**
+以 MNIST 數據集為例，我們對每層 hidden layer 都做一次 auto-encoder，**使每一層都能夠提取到上一層最佳的特徵向量**
 
-为了方便表述，这里用$x-z-x$来表示一个自编码器，其中$x$表述输入输出层的维数，$z$表示隐藏层的维数
+為了方便表述，這裡用$x-z-x$來表示一個自編碼器，其中$x$表述輸入輸出層的維數，$z$表示隱藏層的維數
 
-- 首先使input通过一个$784-1000-784$的自编码器，当该自编码器训练稳定后，就把参数$W^1$固定住，然后将数据集中所有784维的图像都转化为1000维的vector
+- 首先使 input 通過一個$784-1000-784$的自編碼器，當該自編碼器訓練穩定後，就把參數$W^1$固定住，然後將數據集中所有 784 維的圖像都轉化為 1000 維的 vector
 
-    注意：这里做的不是降维而是升维，当编码后的维数比输入维数要高时，需要注意可能会出现编码前后原封不动的情况，为此需要额外加一个正则项，比如L1 regularization，强迫使code的分布是分散的
+  注意：這裡做的不是降維而是升維，當編碼後的維數比輸入維數要高時，需要注意可能會出現編碼前後原封不動的情況，為此需要額外加一個正則項，比如 L1 regularization，強迫使 code 的分布是分散的
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto-pre.png" width="60%"/></center>
 
-- 接下来再让这些1000维的vector通过一个$1000-1000-1000$的编码器，当其训练稳定后，再把参数$W^2$固定住，对数据集再做一次转换
+- 接下來再讓這些 1000 維的 vector 通過一個$1000-1000-1000$的編碼器，當其訓練穩定後，再把參數$W^2$固定住，對數據集再做一次轉換
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto-pre2.png" width="60%"/></center>
 
-- 接下来再用转换后的数据集去训练第三个$1000-500-1000$的自编码器，训练稳定后固定$W^3$，数据集再次更新转化为500维
+- 接下來再用轉換後的數據集去訓練第三個$1000-500-1000$的自編碼器，訓練穩定後固定$W^3$，數據集再次更新轉化為 500 維
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto-pre3.png" width="60%"/></center>
 
-- 此时三个隐藏层的参数$W^1$、$W^2$、$W^3$就是训练整个神经网络时的参数初始值
+- 此時三個隱藏層的參數$W^1$、$W^2$、$W^3$就是訓練整個神經網絡時的參數初始值
 
-- 然后随机初始化最后一个隐藏层到输出层之间的参数$W^4$
+- 然後隨機初始化最後一個隱藏層到輸出層之間的參數$W^4$
 
-- 再用反向传播去调整一遍参数，因为$W^1$、$W^2$、$W^3$都已经是很好的参数值了，这里只是做微调，这个步骤也因此得名为**Find-tune**
+- 再用反向傳播去調整一遍參數，因為$W^1$、$W^2$、$W^3$都已經是很好的參數值了，這裡只是做微調，這個步驟也因此得名為**Find-tune**
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto-pre4.png" width="60%"/></center>
 
-由于现在训练机器的条件比以往更好，因此pre-training并不是必要的，但它也有自己的优势
+由於現在訓練機器的條件比以往更好，因此 pre-training 並不是必要的，但它也有自己的優勢
 
-如果你只有大量的unlabeled data和少量的labeled data，那你可以先用这些unlabeled data把$W^1$、$W^2$、$W^3$先初始化好，最后再用labeled data去微调$W^1$~$W^4$即可
+如果你只有大量的 unlabeled data 和少量的 labeled data，那你可以先用這些 unlabeled data 把$W^1$、$W^2$、$W^3$先初始化好，最後再用 labeled data 去微調$W^1$~$W^4$即可
 
-因此pre-training在有大量unlabeled data的场景下(如半监督学习)是比较有用的
+因此 pre-training 在有大量 unlabeled data 的場景下(如半監督學習)是比較有用的
 
 #### CNN
 
 ##### CNN as Encoder
 
-处理图像通常都会用卷积神经网络CNN，它的基本思想是交替使用卷积层和池化层，让图像越来越小，最终展平，这个过程跟Encoder编码的过程其实是类似的
+處理圖像通常都會用卷積神經網絡 CNN，它的基本思想是交替使用卷積層和池化層，讓圖像越來越小，最終展平，這個過程跟 Encoder 編碼的過程其實是類似的
 
-理论上要实现自编码器，Decoder只需要做跟Encoder相反的事即可，那对CNN来说，解码的过程也就变成了交替使用去卷积层和去池化层即可
+理論上要實現自編碼器，Decoder 只需要做跟 Encoder 相反的事即可，那對 CNN 來說，解碼的過程也就變成了交替使用去卷積層和去池化層即可
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto-cnn.png" width="60%"/></center>
 
-那什么是去卷积层(Deconvolution)和去池化层(Unpooling)呢？
+那什麼是去卷積層(Deconvolution)和去池化層(Unpooling)呢？
 
 ##### Unpooling
 
-做pooling的时候，假如得到一个4×4的matrix，就把每4个pixel分为一组，从每组中挑一个最大的留下，此时图像就变成了原来的四分之一大小
+做 pooling 的時候，假如得到一個 4×4 的 matrix，就把每 4 個 pixel 分為一組，從每組中挑一個最大的留下，此時圖像就變成了原來的四分之一大小
 
-如果还要做Unpooling，就需要提前记录pooling所挑选的pixel在原图中的位置，下图中用灰色方框标注
+如果還要做 Unpooling，就需要提前記錄 pooling 所挑選的 pixel 在原圖中的位置，下圖中用灰色方框標注
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto-unpooling.png" width="60%"/></center>
 
-然后做Unpooling，就要把当前的matrix放大到原来的四倍，也就是把2×2 matrix里的pixel按照原先记录的位置插入放大后的4×4 matrix中，其余项补0即可
+然後做 Unpooling，就要把當前的 matrix 放大到原來的四倍，也就是把 2×2 matrix 里的 pixel 按照原先記錄的位置插入放大後的 4×4 matrix 中，其餘項補 0 即可
 
-当然这不是唯一的做法，在Keras中，pooling并没有记录原先的位置，做Unpooling的时候就是直接把pixel的值复制四份填充到扩大后的matrix里即可
+當然這不是唯一的做法，在 Keras 中，pooling 並沒有記錄原先的位置，做 Unpooling 的時候就是直接把 pixel 的值複製四份填充到擴大後的 matrix 里即可
 
 ##### Deconvolution
 
-实际上，Deconvolution就是convolution
+實際上，Deconvolution 就是 convolution
 
-这里以一维的卷积为例，假设输入是5维，过滤器(filter)的大小是3
+這裡以一維的卷積為例，假設輸入是 5 維，過濾器(filter)的大小是 3
 
-卷积的过程就是每三个相邻的点通过过滤器生成一个新的点，如下图左侧所示
+卷積的過程就是每三個相鄰的點通過過濾器生成一個新的點，如下圖左側所示
 
-在你的想象中，去卷积的过程应该是每个点都生成三个点，不同的点对生成同一个点的贡献值相加；但实际上，这个过程就相当于在周围补0之后再次做卷积，如下图右侧所示，两个过程是等价的
+在你的想象中，去卷積的過程應該是每個點都生成三個點，不同的點對生成同一個點的貢獻值相加；但實際上，這個過程就相當於在周圍補 0 之後再次做卷積，如下圖右側所示，兩個過程是等價的
 
-卷积和去卷积的过程中，不同点在于，去卷积需要补零且过滤器的weight与卷积是相反的：
+卷積和去卷積的過程中，不同點在於，去卷積需要補零且過濾器的 weight 與卷積是相反的：
 
-- 在卷积过程中，依次是橙线、蓝线、绿线
-- 在去卷积过程中，依次是绿线、蓝线、橙线
+- 在卷積過程中，依次是橙線、藍線、綠線
+- 在去卷積過程中，依次是綠線、藍線、橙線
 
-因此在实践中，做去卷积的时候直接对模型加卷积层即可
+因此在實踐中，做去卷積的時候直接對模型加卷積層即可
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto-deconvolution.png" width="60%"/></center>
 
@@ -201,42 +201,42 @@ Auto-encoder同样可以被用在图像检索上
 
 ##### De-noising Auto-encoder
 
-去噪自编码器的基本思想是，把输入的$x$加上一些噪声(noise)变成$x'$，再对$x'$依次做编码(encode)和解码(decode)，得到还原后的$y$
+去噪自編碼器的基本思想是，把輸入的$x$加上一些噪聲(noise)變成$x'$，再對$x'$依次做編碼(encode)和解碼(decode)，得到還原後的$y$
 
-值得注意的是，一般的自编码器都是让输入输出尽可能接近，但在去噪自编码器中，我们的目标是让解码后的$y$与加噪声之前的$x$越接近越好
+值得注意的是，一般的自編碼器都是讓輸入輸出盡可能接近，但在去噪自編碼器中，我們的目標是讓解碼後的$y$與加噪聲之前的$x$越接近越好
 
-这种方法可以增加系统的鲁棒性，因为此时的编码器Encoder不仅仅是在学习如何做编码，它还学习到了如何过滤掉噪声这件事情
+這種方法可以增加系統的魯棒性，因為此時的編碼器 Encoder 不僅僅是在學習如何做編碼，它還學習到了如何過濾掉噪聲這件事情
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto-noise.png" width="60%"/></center>
 
-参考文献：*Vincent, Pascal, et al. "Extracting and composing robust features with denoising autoencoders." ICML, 2008.*
+參考文獻：_Vincent, Pascal, et al. "Extracting and composing robust features with denoising autoencoders." ICML, 2008._
 
 ##### Contractive Auto-encoder
 
-收缩自动编码器的基本思想是，在做encode编码的时候，要加上一个约束，它可以使得：input的变化对编码后得到的code的影响最小化
+收縮自動編碼器的基本思想是，在做 encode 編碼的時候，要加上一個約束，它可以使得：input 的變化對編碼後得到的 code 的影響最小化
 
-这个描述跟去噪自编码器很像，只不过去噪自编码器的重点在于加了噪声之后依旧可以还原回原先的输入，而收缩自动编码器的重点在于加了噪声之后能够保持编码结果不变
+這個描述跟去噪自編碼器很像，只不過去噪自編碼器的重點在於加了噪聲之後依舊可以還原回原先的輸入，而收縮自動編碼器的重點在於加了噪聲之後能夠保持編碼結果不變
 
-参考文献：*Rifai, Salah, et al. "Contractive auto-encoders: Explicit invariance during feature extraction.“ Proceedings of the 28th International Conference on Machine Learning (ICML-11). 2011.*
+參考文獻：_Rifai, Salah, et al. "Contractive auto-encoders: Explicit invariance during feature extraction.「 Proceedings of the 28th International Conference on Machine Learning (ICML-11). 2011._
 
 ##### Seq2Seq Auto-encoder
 
-在之前介绍的自编码器中，输入都是一个固定长度的vector，但类似文章、语音等信息实际上不应该单纯被表示为vector，那会丢失很多前后联系的信息
+在之前介紹的自編碼器中，輸入都是一個固定長度的 vector，但類似文章、語音等信息實際上不應該單純被表示為 vector，那會丟失很多前後聯繫的信息
 
-Seq2Seq就是为了解决这个问题提出的，具体内容将在RNN部分介绍
+Seq2Seq 就是為瞭解決這個問題提出的，具體內容將在 RNN 部分介紹
 
 #### Generate
 
-在用自编码器的时候，通常是获取Encoder之后的code作为降维结果，但实际上Decoder也是有作用的，我们可以拿它来生成新的东西
+在用自編碼器的時候，通常是獲取 Encoder 之後的 code 作為降維結果，但實際上 Decoder 也是有作用的，我們可以拿它來生成新的東西
 
-以MNIST为例，训练好编码器之后，取出其中的Decoder，输入一个随机的code，就可以生成一张图像
+以 MNIST 為例，訓練好編碼器之後，取出其中的 Decoder，輸入一個隨機的 code，就可以生成一張圖像
 
-假设将28×28维的图像通过一层2维的hidden layer投影到二维平面上，得到的结果如下所示，不同颜色的点代表不同的数字，然后在红色方框中，等间隔的挑选二维向量丢进Decoder中，就会生成许多数字的图像
+假設將 28×28 維的圖像通過一層 2 維的 hidden layer 投影到二維平面上，得到的結果如下所示，不同顏色的點代表不同的數字，然後在紅色方框中，等間隔的挑選二維向量丟進 Decoder 中，就會生成許多數字的圖像
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto-gene.png" width="60%"/></center>
 
-此外，我们还可以对code加L2 regularization，以限制code分布的范围集中在0附近，此时就可以直接以0为中心去随机采取样本点，再通过Decoder生成图像
+此外，我們還可以對 code 加 L2 regularization，以限制 code 分布的範圍集中在 0 附近，此時就可以直接以 0 為中心去隨機採取樣本點，再通過 Decoder 生成圖像
 
-观察生成的数字图像，可以发现横轴的维度表示是否含有圆圈，纵轴的维度表示是否倾斜
+觀察生成的數字圖像，可以發現橫軸的維度表示是否含有圓圈，縱軸的維度表示是否傾斜
 
 <center><img src="https://gitee.com/Sakura-gh/ML-notes/raw/master/img/auto-gene2.png" width="60%"/></center>
